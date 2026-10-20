@@ -138,7 +138,7 @@ h1 span { color: #708092; }
 .case-story[data-kind="review"] .outcome-signal { color: #80600c; }
 .case-story[data-kind="native"] .outcome-signal { color: #275b8f; }
 .case-story[data-kind="audit"] .outcome-signal { color: #734b80; }
-.outcome-summary p { font-size: 13px; line-height: 1.62; color: var(--body); margin: 10px 0 0; }
+.outcome-summary p { font-size: 14px; line-height: 1.62; color: var(--body); margin: 10px 0 0; }
 .case-context { border-left: 1px solid var(--rule); background: #fafbfd; padding: 35px 22px 25px; min-width: 0; }
 .case-context h4 { margin: 0 0 21px; font-size: 14px; font-weight: 720; }
 .facts { margin: 0; }
@@ -153,7 +153,7 @@ h1 span { color: #708092; }
 .proof-content > div { min-width: 0; }
 .proof-content > div + div { border-left: 1px solid #d4dfed; padding-left: 25px; }
 .proof-label { font-size: 10px; color: var(--muted); font-weight: 700; }
-.proof-content p { font-size: 13px; color: var(--body); line-height: 1.65; margin: 8px 0 10px; }
+.proof-content p { font-size: 14px; color: var(--body); line-height: 1.65; margin: 8px 0 10px; }
 .proof-link { display: inline-block; font-size: 13px; font-weight: 730; text-decoration: none; color: var(--blue); border-bottom: 1px solid #8ba8cc; padding-bottom: 4px; }
 .proof-link:hover { border-color: var(--blue); }
 .case-footer { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 12px 21px; border-top: 1px solid var(--rule); padding: 13px clamp(24px,3.2vw,46px); }
@@ -197,7 +197,7 @@ h1 span { color: #708092; }
 }
 .chain-content { min-width: 0; }
 .chain-content h3 { margin: 2px 0 7px; font-size: 17px; letter-spacing: -.019em; font-weight: 730; }
-.chain-content > p { color: var(--body); font-size: 13px; line-height: 1.65; margin: 0; max-width: 64ch; }
+.chain-content > p { color: var(--body); font-size: 14px; line-height: 1.65; margin: 0; max-width: 64ch; }
 .decision-routes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 17px; }
 .decision-routes > div {
   background: #f4f7fa; border-top: 2px solid #b4c4d5; padding: 12px;
@@ -207,14 +207,14 @@ h1 span { color: #708092; }
 .decision-routes > div:nth-child(2) { border-top-color: #bd9b48; }
 .decision-routes > div:last-child { border-top-color: #498b76; }
 .decision-routes strong { font-size: 12px; font-weight: 740; color: var(--ink); }
-.decision-routes span { font-size: 11px; line-height: 1.5; color: var(--body); }
+.decision-routes span { font-size: 12px; line-height: 1.5; color: var(--body); }
 .architecture-scope {
   min-width: 0; padding: clamp(24px, 3vw, 36px);
   border-left: 1px solid #cbd7e2; background: #eef3f9;
 }
 .scope-eyebrow { font: 11px/1.5 var(--mono); letter-spacing: .04em; color: var(--blue); margin: 0 0 17px; }
 .architecture-scope h3 { font-size: clamp(20px, 2vw, 25px); font-weight: 730; line-height: 1.2; letter-spacing: -.035em; margin: 0 0 15px; }
-.architecture-scope > p:not(.scope-eyebrow) { font-size: 13px; line-height: 1.7; margin: 0 0 17px; color: var(--body); }
+.architecture-scope > p:not(.scope-eyebrow) { font-size: 14px; line-height: 1.7; margin: 0 0 17px; color: var(--body); }
 .architecture-scope .scope-warning { padding-top: 16px; border-top: 1px solid #c7d6e8; }
 .scope-warning strong { color: var(--ink); }
 .scope-link { display: inline-flex; align-items: baseline; gap: 8px; color: var(--blue); font-size: 12px; font-weight: 730; text-decoration: none; border-bottom: 1px solid #97b0d2; padding-bottom: 4px; }
@@ -223,7 +223,7 @@ h1 span { color: #708092; }
 .architecture-support > div { border-top: 1px solid #c8d5e2; padding-top: 18px; }
 .architecture-support > div > span { color: var(--blue); font: 11px var(--mono); }
 .architecture-support h3 { font-size: 17px; letter-spacing: -.018em; font-weight: 730; margin: 11px 0 8px; }
-.architecture-support p { color: var(--body); font-size: 13px; line-height: 1.65; max-width: 56ch; margin: 0; }
+.architecture-support p { color: var(--body); font-size: 14px; line-height: 1.65; max-width: 56ch; margin: 0; }
 .evidence-list { border-top: 1px solid var(--rule); }
 .evidence-list a { display: grid; grid-template-columns: 40px minmax(0,1fr) auto 14px; gap: 17px; padding: 20px 8px; border-bottom: 1px solid var(--rule); align-items: center; text-decoration: none; }
 .evidence-list a:hover { background: #ecf1f7; }
