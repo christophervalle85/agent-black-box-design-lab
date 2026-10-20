@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a0d14">
+  <title>Agent Black Box · Security Observability</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Sidebar">
+      <div class="brand"><div class="brand-logo">▣</div><div><b>BLACK BOX</b><small>AGENT SECURITY</small></div></div>
+      <div class="workspace"><span class="workspace-icon">◈</span><div><strong>Local workspace</strong><small>Development environment</small></div><span class="chevron">⌄</span></div>
+      <div class="nav-label">OBSERVE</div>
+      <nav aria-label="Sections">
+        <button type="button" class="nav-item active" data-view="overview"><span>◫</span> Overview</button>
+        <button type="button" class="nav-item" data-view="agent"><span>✧</span> AI agent</button>
+        <button type="button" class="nav-item" data-view="approvals"><span>☷</span> Approvals <span id="approval-count" class="nav-count">0</span></button>
+        <button type="button" class="nav-item" data-view="activity"><span>≡</span> Activity log <span id="nav-count" class="nav-count">0</span></button>
+        <button type="button" class="nav-item" data-view="policies"><span>◇</span> Security policies</button>
+      </nav>
+      <div class="sidebar-bottom"><div class="sidebar-card"><div class="sidebar-card-icon">◈</div><b>Your security perimeter</b><p>Every guarded action is evaluated before its tool runs.</p><span>LOCAL MODE  ·  v0.6</span></div><div class="sidebar-footer"><span class="green-dot"></span> System operational</div></div>
+    </aside>
+    <main>
+      <header class="topbar"><div class="crumb">Workspace <span>/</span> <strong id="page-crumb">Overview</strong></div><div class="top-actions"><a class="subtle-link" href="/showcase">Explore the v0.9 field guide ↗</a><div class="live-pill"><span class="green-dot pulse" id="connection-dot"></span><span id="connection-label">Connecting</span></div><div class="avatar" aria-label="Local user">L</div></div></header>
+      <div class="page-content">
+        <div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> AGENT OBSERVABILITY PLATFORM</div><h1 id="page-title">Security overview</h1><p id="page-subtitle">Monitor every agent action. Understand every security decision.</p></div><button id="run-demo" type="button" class="primary-button"><span class="play-icon">▶</span> Run demo agent <span class="button-arrow">↗</span></button></div>
+        <section id="overview-view">
+          <div class="metric-grid">
+            <article class="metric"><div class="metric-top"><span>Total tool calls</span><span class="metric-icon blue">⌁</span></div><div class="metric-value" id="total-value">0</div><div class="metric-foot"><span id="audit-event-count">Audit events tracked separately</span></div></article>
+            <article class="metric"><div class="metric-top"><span>Allowed actions</span><span class="metric-icon green">✓</span></div><div class="metric-value" id="allowed-value">0</div><div class="metric-foot"><span class="inline-green">●</span> Cleared by policy</div></article>
+            <article class="metric"><div class="metric-top"><span>Blocked actions</span><span class="metric-icon red">⊘</span></div><div class="metric-value" id="blocked-value">0</div><div class="metric-foot"><span class="inline-red">●</span> Prevented before execution</div></article>
+            <article class="metric"><div class="metric-top"><span>High-risk alerts</span><span class="metric-icon amber">⚑</span></div><div class="metric-value" id="risk-value">0</div><div class="metric-foot">High + critical classifications</div></article>
+          </div>
+          <div class="overview-grid">
+            <section class="panel activity-panel"><div class="panel-head"><div><h2>Recent activity</h2><p>Latest tool requests and final decisions</p></div><button id="view-all" class="subtle-link" type="button">View all activity ↗</button></div><div id="recent-activity" class="recent-list"></div></section>
+            <section class="panel guard-panel"><div class="panel-head"><div><h2>Protection status</h2><p>Your active defense layers</p></div><span class="tiny-badge">ACTIVE</span></div><div class="guard-emblem">◈<div class="guard-check">✓</div></div><h3>Policy engine active</h3><p class="guard-copy">Tool calls through the guard are checked before execution, with an auditable decision trail.</p><div class="guard-separator"></div><div class="guard-stat"><span>Policy rules</span><strong id="policy-count">7 active</strong></div><div class="guard-stat"><span>Enforcement mode</span><strong>Fail closed</strong></div><div class="guard-stat"><span>Audit storage</span><strong id="audit-integrity-label">Checking integrity…</strong></div><div class="guard-stat"><span>Incident status</span><strong id="incident-status">Checking…</strong></div><p class="guard-copy" id="incident-guidance" role="status" aria-live="polite">Checking security evidence.</p></section>
+          </div>
+          <section class="panel workflow"><div class="panel-head"><div><h2>How it works</h2><p>Every instrumented agent action passes through the security pipeline</p></div></div><div class="workflow-steps"><div class="workflow-step"><div class="step-icon">◇</div><b>Agent request</b><small>Request a guarded tool</small></div><div class="step-arrow">⟶</div><div class="workflow-step"><div class="step-icon">⬡</div><b>Policy evaluation</b><small>Assess risk &amp; scope</small></div><div class="step-arrow">⟶</div><div class="workflow-step"><div class="step-icon">✓</div><b>Allow, review or block</b><small>Enforce the decision</small></div><div class="step-arrow">⟶</div><div class="workflow-step"><div class="step-icon">▤</div><b>Audit trail</b><small>Persist evidence</small></div></div></section>
+        </section>
+        <section id="agent-view" class="hidden">
+          <div class="agent-grid">
+            <section class="panel agent-prompt-panel">
+              <div class="panel-head"><div><h2>Run a real AI agent</h2><p>Ollama chooses the tool calls. Black Box evaluates each before execution.</p></div><span class="tiny-badge">MODEL-DRIVEN</span></div>
+              <div class="agent-inner">
+                <div class="agent-provider"><span id="model-led" class="model-led"></span><div><b id="model-name">Checking local model…</b><small id="model-status">Ollama is queried on localhost only</small></div><button id="check-model" type="button" class="subtle-link">Recheck ↻</button></div>
+                <label for="agent-prompt" class="agent-label">TASK FOR YOUR AGENT</label>
+                <textarea id="agent-prompt" rows="5" maxlength="2000" placeholder="Summarize notes.txt and report if you encountered any denied tool calls.">Read notes.txt in the demo workspace and summarize the contents. Then request read_file on .env to demonstrate the security policy. Explain what was allowed and blocked.</textarea>
+                <div class="agent-presets"><span>Try:</span><button type="button" class="preset-button" data-prompt="Read notes.txt and give me a two-sentence summary.">Workspace read</button><button type="button" class="preset-button" data-prompt="Request read_file on .env to test the security policy, and explain the denial. Do not try to bypass it.">Restricted file</button><button type="button" class="preset-button" data-prompt="Use write_note to create a new file named summary-demo.txt with the content: Agent Black Box human approval test. Wait for human approval before proceeding.">Approval test</button><button type="button" class="preset-button" data-prompt="Request run_shell with command pwd once to demonstrate the security guard. Report whether it was blocked, without attempting a bypass.">Denied shell</button></div>
+                <button id="run-agent" type="button" class="primary-button agent-run">✧ Run with local LLM ↗</button>
+                <p class="agent-hint">No cloud API key or paid model required. Install Ollama and download a tool-capable model first. Shell and unapproved network access remain blocked. New note creation requires approval.</p>
+              </div>
+            </section>
+            <section class="panel agent-output-panel">
+              <div class="panel-head"><div><h2>Agent response</h2><p>Model-generated answer and audited tool activity</p></div><span id="agent-result-status" class="tiny-badge">IDLE</span></div>
+              <div class="agent-inner"><div id="agent-answer" class="agent-answer">Run a task to see the model's response. Tool actions appear in the live activity log as they occur.</div><div id="agent-run-meta" class="agent-run-meta"></div><div id="agent-run-events" class="agent-run-events"></div></div>
+            </section>
+          </div>
+          <section class="panel agent-approval-section"><div class="panel-head"><div><h2>Pending approval requests</h2><p>Review the exact note content before deciding. Requests expire after 90 seconds.</p></div><span class="tiny-badge">HUMAN REVIEW</span></div><div id="agent-approvals" class="approval-list"></div></section>
+          <div class="notice"><b>First-time setup</b><p>Install <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer">Ollama</a>, run <code>ollama pull qwen3:4b-instruct</code>, then recheck the model connection. Tool calls are executed only by this application's pre-existing guarded adapters; this does not protect external agents or provide an OS sandbox.</p></div>
+        </section>
+        <section id="approvals-view" class="hidden"><div class="panel"><div class="panel-head"><div><h2>Human authorization queue</h2><p>Approve or deny an individual request. Denials and expirations stop execution.</p></div><span class="tiny-badge">ONE-TIME APPROVAL</span></div><div id="approvals-list" class="approval-list"></div></div><div class="notice"><b>Limited capabilities</b><p>Only creation of a new top-level .txt note inside the demo workspace is eligible for human approval. .env access, shell commands and unsafe paths remain blocked regardless of operator choice. Approvals are ephemeral and expire after 90 seconds.</p></div></section>
+        <section id="activity-view" class="hidden"><div class="panel"><div class="panel-head activity-controls"><div><h2>Complete activity log</h2><p>One row per tool request · open a row to inspect its decision timeline</p></div><label class="filter-label">Decision <select id="decision-filter"><option value="all">All decisions</option><option value="allow">Allowed</option><option value="block">Blocked</option><option value="review">Awaiting approval</option><option value="reviewed">Approval history</option></select></label></div><div class="table-wrap"><table><thead><tr><th>TIME</th><th>TOOL / AGENT</th><th>DECISION</th><th>RISK</th><th>POLICY RULE</th><th>OUTCOME</th><th></th></tr></thead><tbody id="event-table"></tbody></table></div><div class="table-foot" id="table-foot">Showing recent tool requests</div></div></section>
+        <section id="policies-view" class="hidden"><div class="panel"><div class="panel-head"><div><h2>Active security policies</h2><p>Deterministic, pre-execution enforcement rules</p></div><span class="tiny-badge">ENFORCING</span></div><div class="policy-list" id="policy-list"></div></div><div class="notice"><b>Scope of enforcement</b><p>Only actions invoked through this application's guard are protected. The dashboard is not a host-wide monitor, a general MCP proxy, or a production security boundary.</p></div></section>
+      </div>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <dialog id="event-dialog" aria-labelledby="dialog-title"><div class="dialog-head"><div><div class="eyebrow">AUDIT RECORD</div><h2 id="dialog-title">Tool invocation</h2></div><button id="dialog-close" type="button" aria-label="Close details">✕</button></div><div id="dialog-content"></div></dialog>
+</body>
+</html>
