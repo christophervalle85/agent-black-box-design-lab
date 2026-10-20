@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#121511">
+  <meta name="description" content="Agent Black Box — a guided, evidence-scoped tour of AI agent security decisions and sandbox boundaries.">
+  <title>Field Guide · Agent Black Box</title>
+  <link rel="stylesheet" href="/showcase.css">
+  <script type="module" src="/showcase.js"></script>
+</head>
+<body>
+  <a class="skip" href="#cases">Skip to scenarios</a>
+  <div class="canvas-grid" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Agent Black Box — operational dashboard">
+      <span class="brand-mark" aria-hidden="true">▣</span>
+      <span class="brand-text"><strong>BLACK BOX</strong><small>AGENT SECURITY / 0.9 LAB</small></span>
+    </a>
+    <nav class="header-links" aria-label="Main navigation">
+      <a class="header-link" href="/">Operational dashboard <span aria-hidden="true">↗</span></a>
+      <a class="header-link selected" href="/showcase" aria-current="page">Field guide</a>
+      <a class="header-link" href="https://github.com/christophervalle85/agent-black-box" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <div class="intro-copy">
+        <p class="kicker"><span class="kicker-dash"></span> FIELD GUIDE <span class="kicker-num">/ 001</span></p>
+        <h1 id="page-title">Agents move fast.<br><em>Boundaries hold.</em></h1>
+        <p class="lede">A guided look at the moment an AI agent asks to act—and the policy, approval, audit, or operating-system control that answers.</p>
+        <div class="intro-capsules" aria-label="Demonstration constraints">
+          <span>NO API KEY</span><span>NO LIVE MODEL</span><span>NO FILE WRITES</span>
+        </div>
+      </div>
+      <div class="intro-visual" aria-hidden="true">
+        <div class="orb-orbit orbit-one"></div>
+        <div class="orb-orbit orbit-two"></div>
+        <div class="orb-center"><span>⏣</span><small>POLICY<br>BOUNDARY</small></div>
+        <span class="visual-tag tag-one">REQUEST</span>
+        <span class="visual-tag tag-two">VERIFY</span>
+        <span class="visual-tag tag-three">ENFORCE</span>
+      </div>
+    </section>
+
+    <section class="disclosure" aria-labelledby="disclosure-title">
+      <span class="disclosure-icon" aria-hidden="true">◎</span>
+      <div><strong id="disclosure-title">Illustrative walkthrough, not a live security test.</strong>
+      <p id="demo-mode-description">The guided steps reproduce documented behavior; this page never authorizes a tool, modifies the audit log, or probes the sandbox.</p></div>
+      <span class="disclosure-version">STORYBOARD / v0.9</span>
+    </section>
+
+    <section class="tour" id="cases" aria-labelledby="tour-title">
+      <div class="section-heading">
+        <div><p class="kicker">THE DECISION FILES</p><h2 id="tour-title">Six moments at the boundary.</h2></div>
+        <p>Select a case. Follow each decision from request to outcome.</p>
+      </div>
+      <div class="tour-grid">
+        <aside class="cases-sidebar">
+          <div class="sidebar-heading"><span>CASE INDEX</span><span>01 — 06</span></div>
+          <div id="scenario-list" class="scenario-list" aria-label="Security scenarios"></div>
+          <div class="sidebar-foot">
+            <span class="sidebar-foot-mark" aria-hidden="true">↗</span>
+            <p>Built from the v0.8 control surfaces and their recorded acceptance scope.</p>
+          </div>
+        </aside>
+
+        <article class="case-panel" aria-labelledby="case-title">
+          <div class="case-topline">
+            <span class="case-label" id="case-number">CASE 01 / 06</span>
+            <span class="case-outcome" id="case-outcome">BLOCKED</span>
+          </div>
+          <div class="case-heading">
+            <p class="case-category" id="case-category">NODE POLICY GUARD</p>
+            <h3 id="case-title">Select a case</h3>
+            <p id="case-subtitle">A guided walkthrough of documented security decisions.</p>
+          </div>
+          <div class="case-metadata">
+            <div><span>TOOL / PROBE</span><strong id="case-tool"></strong></div>
+            <div><span>POLICY / BOUNDARY</span><strong id="case-rule"></strong></div>
+            <div><span>TARGET</span><strong id="case-target"></strong></div>
+          </div>
+          <div class="step-stage" aria-live="polite" aria-atomic="true">
+            <div class="step-eyebrow"><span id="step-phase">REQUEST</span><span id="step-position">01 / 03</span></div>
+            <h4 id="step-title"></h4>
+            <p id="step-detail"></p>
+            <div class="terminal-line"><span class="terminal-prompt" aria-hidden="true">›</span><code id="step-signal"></code></div>
+          </div>
+          <div class="playback">
+            <div class="playback-top"><span>DECISION SEQUENCE</span><span id="progress-label">STEP 1 OF 3</span></div>
+            <div class="progress-track" aria-hidden="true"><div id="progress-fill"></div></div>
+            <div class="playback-actions">
+              <button id="previous-step" type="button" class="button secondary">← Previous</button>
+              <button id="restart-case" type="button" class="button subtle">Restart case</button>
+              <button id="next-step" type="button" class="button primary">Next step →</button>
+            </div>
+          </div>
+          <div class="case-bottom">
+            <span><b>EVIDENCE SCOPE</b><span id="case-evidence"></span></span>
+            <a id="case-source" href="https://github.com/christophervalle85/agent-black-box" target="_blank" rel="noopener noreferrer">Read supporting documentation ↗</a>
+          </div>
+        </article>
+      </div>
+      <div class="timeline-rail"><div class="timeline-rail-top"><h3>Inside the decision</h3><p>Each stage is a reconstructed explanation, not a recorded live event.</p></div><ol id="scenario-timeline"></ol></div>
+    </section>
+
+    <section class="principles" aria-labelledby="principles-title">
+      <p class="kicker">DESIGN PRINCIPLES</p>
+      <h2 id="principles-title">Security controls worth seeing.</h2>
+      <div class="principle-grid">
+        <div class="principle"><span>01 / POLICY</span><h3>Decide before acting.</h3><p>Tool calls go through a deterministic guard. Unsupported or risky actions fail closed before execution.</p></div>
+        <div class="principle"><span>02 / HUMAN</span><h3>Approve the exact thing.</h3><p>Eligible note writes pause for one-time review of the requested content. Approval does not grant arbitrary access.</p></div>
+        <div class="principle"><span>03 / KERNEL</span><h3>Move the boundary to the OS.</h3><p>The macOS required-mode worker is separately sandboxed and signed. The Node control plane is not sandboxed.</p></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><span>AGENT BLACK BOX <span class="footer-dot">✳</span> FIELD GUIDE</span><span>v0.9 scaffold · Source-backed, illustrated behavior</span><a href="/">Open operational dashboard ↗</a></footer>
+</body>
+</html>
