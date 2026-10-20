@@ -1,146 +1,181 @@
 import { SCENARIOS, SHOWCASE_MODE, findScenario } from './showcase-scenarios.mjs';
 
-// Public presentation only: no fetch, approval, tool execution, or native probes.
+// Read-only public storytelling. No backend requests, approvals, audit writes or
+// native probes. All observable values originate in documented scenario fixtures.
 const $ = id => document.getElementById(id);
-const element = (tag, cls, value) => {
-  const el = document.createElement(tag);
-  if (cls) el.className = cls;
-  if (value !== undefined) el.textContent = String(value);
-  return el;
+const create = (tag, className, label) => {
+  const element = document.createElement(tag);
+  if (className) element.className = className;
+  if (label !== undefined) element.textContent = String(label);
+  return element;
 };
-const notes = Object.freeze({
-  'restricted-file': 'This Node policy protects calls routed through its guard, not every host file read or unsandboxed process.',
-  'shell-command': 'The selected routed tool has no authority to execute arbitrary shell commands. This is not a host-wide shell monitor.',
-  'human-approval': 'This is a storyboard, not an actual approval. A one-use decision only enables the reviewed note-creation attempt, which may still fail.',
-  'path-traversal': 'The guard denies this attempted path escape before adapter dispatch; this does not prove immunity to every filesystem race.',
-  'native-boundary': 'The OS denials are from a separately signed worker-source diagnostic, not a fresh probe of the byte-identical installed worker or a Node-parent sandbox.',
-  'audit-tamper': 'The local HMAC verifier catches the changed fixture. Same-user compromise and independent evidence custody remain outside the guarantee.'
+
+const limitations = Object.freeze({
+  'restricted-file': 'The Node guard checks selected routed calls, not every file read by other host processes. This is not operating-system file isolation.',
+  'shell-command': 'Arbitrary shell authority is unavailable through this routed tool interface. This does not demonstrate a host-wide execution monitor.',
+  'human-approval': 'The public page issues no approval. One-time review applies only to a bounded note-creation request; the exclusive-create attempt can still fail.',
+  'path-traversal': 'The guard denies this path before dispatch. The example does not establish protection against every filesystem race.',
+  'native-boundary': 'The observed OS denials come from a separately signed worker-source diagnostic, not a fresh test of the byte-identical installed worker or a sandbox around the Node parent.',
+  'audit-tamper': 'The local HMAC verifier catches this altered fixture. Same-user compromise and independently secured evidence custody remain outside this guarantee.'
 });
-const shortTitles = Object.freeze({
-  'restricted-file': 'Sensitive file',
-  'shell-command': 'Shell attempt',
-  'human-approval': 'Human review',
-  'path-traversal': 'Path escape',
-  'native-boundary': 'macOS diagnostic',
-  'audit-tamper': 'Audit integrity'
+const outcomes = Object.freeze({
+  'restricted-file': {
+    title: 'DENIED BEFORE FILE READ',
+    explanation: 'The selected request matches the sensitive-file rule. The guarded adapter is never dispatched, so this routed call does not return the .env contents.'
+  },
+  'shell-command': {
+    title: 'NO SHELL EXECUTION',
+    explanation: 'The proposed shell command is rejected by the routed policy boundary. No shell adapter is dispatched for this request.'
+  },
+  'human-approval': {
+    title: 'REVIEWED, NOT UNRESTRICTED',
+    explanation: 'This storyboard follows one eligible note-creation request through one-use operator approval. The guarded adapter then attempts exclusive creation; approval does not guarantee that the write succeeds.'
+  },
+  'path-traversal': {
+    title: 'ESCAPE DENIED',
+    explanation: 'The relative path is rejected by the configured workspace boundary. The read adapter is not given an authorized path outside the demo workspace.'
+  },
+  'native-boundary': {
+    title: 'OS DENIAL IN A SEPARATE DIAGNOSTIC',
+    explanation: 'A separately signed worker-source diagnostic was denied access to a host-private file and loopback listener, while its own sandbox-managed scratch storage remained usable.'
+  },
+  'audit-tamper': {
+    title: 'AUTHENTICITY CHECK FAILED',
+    explanation: 'A deliberately changed fixture fails HMAC-linked audit verification. The documented local guard then refuses protected execution while integrity is compromised.'
+  }
 });
-function payloadFor(s) {
-  if (s.kind === 'native') return 'TEST TYPE  signed worker-source diagnostic\nPROBES     host-private file + loopback\nBOUNDARY   macOS App Sandbox';
-  if (s.kind === 'audit') return 'VERIFIER   audit.verify\nINPUT      tampered audit fixture\nCHECK      HMAC-linked records';
-  const argument = s.tool === 'shell.exec' ? 'command' : 'path';
-  return JSON.stringify({ tool: s.tool, arguments: { [argument]: s.target } }, null, 2);
+const stageLabels = Object.freeze({
+  'restricted-file': ['Request', 'Policy match', 'Denied'],
+  'shell-command': ['Request', 'No shell grant', 'Denied'],
+  'human-approval': ['Request', 'Paused', 'One-use review', 'Create attempt', 'Audit'],
+  'path-traversal': ['Request', 'Escape check', 'Denied'],
+  'native-boundary': ['Signed build', 'Private file', 'Loopback', 'Scratch storage'],
+  'audit-tamper': ['Baseline', 'Changed record', 'Verify', 'Contain']
+});
+
+function requestText(scenario) {
+  // The native acceptance test and audit-verifier fixture are not tool calls.
+  if (scenario.kind === 'native') {
+    return 'FIXTURE    signed worker-source diagnostic\nATTEMPTS   host-private read + loopback connection\nBOUNDARY   macOS App Sandbox';
+  }
+  if (scenario.kind === 'audit') {
+    return 'FIXTURE    modified local audit record\nCHECK      audit.verify\nCONTROL    HMAC-linked audit + checkpoint';
+  }
+  return JSON.stringify({
+    tool: scenario.tool,
+    arguments: { [scenario.tool === 'shell.exec' ? 'command' : 'path']: scenario.target }
+  }, null, 2);
 }
-function fromUrl() {
+
+function getLocation() {
   const params = new URLSearchParams(window.location.search);
   const scenario = findScenario(params.get('case')) ?? SCENARIOS[0];
-  const n = Number(params.get('step'));
-  const step = Number.isInteger(n) && n >= 1 && n <= scenario.steps.length ? n - 1 : 0;
+  const stepValue = params.get('step');
+  const requestedStep = stepValue === null ? 1 : Number(stepValue);
+  const step = Number.isInteger(requestedStep) && requestedStep >= 1 && requestedStep <= scenario.steps.length
+    ? requestedStep - 1 : 0;
   return { scenario, step };
 }
-let { scenario: current, step: index } = fromUrl();
-const caseButtons = new Map();
+let { scenario: current, step: index } = getLocation();
 let stageButtons = [];
-function updateUrl(push = false) {
+
+function updateHistory(push) {
   const url = new URL(window.location.href);
   url.searchParams.set('case', current.id);
   url.searchParams.set('step', String(index + 1));
-  const path = url.pathname + url.search + url.hash;
-  if (push) window.history.pushState(null, '', path);
-  else window.history.replaceState(null, '', path);
+  const location = url.pathname + url.search + url.hash;
+  if (push) window.history.pushState(null, '', location);
+  else window.history.replaceState(null, '', location);
 }
-function clearFeedback() { $('action-feedback').textContent = ''; }
-function buildIndex() {
-  const root = $('scenario-list');
-  root.replaceChildren();
-  for (const scenario of SCENARIOS) {
-    const button = element('button', 'case-pick');
-    button.type = 'button';
-    button.append(
-      element('span', 'case-pick-num', scenario.number),
-      element('span', 'case-pick-name', shortTitles[scenario.id]),
-      element('span', 'case-pick-outcome', scenario.outcome)
-    );
-    button.addEventListener('click', () => selectCase(scenario.id));
-    caseButtons.set(scenario.id, button);
-    root.append(button);
-  }
-}
-function buildStages() {
-  const root = $('scenario-timeline');
-  root.replaceChildren();
+function feedback(message = '') { $('action-feedback').textContent = message; }
+
+function buildStageButtons() {
+  const list = $('scenario-timeline');
+  list.replaceChildren();
   stageButtons = current.steps.map((step, position) => {
-    const li = element('li');
-    const button = element('button', 'stage-button');
+    const item = create('li');
+    const button = create('button', 'stage-button');
     button.type = 'button';
-    button.setAttribute('aria-label', 'Step ' + (position + 1) + ': ' + step.title);
+    button.setAttribute('aria-label', 'Inspect stage ' + (position + 1) + ': ' + step.title);
     button.append(
-      element('span', '', String(position + 1).padStart(2, '0')),
-      element('strong', '', step.phase)
+      create('span', '', String(position + 1).padStart(2, '0')),
+      create('strong', '', stageLabels[current.id][position])
     );
     button.addEventListener('click', () => selectStep(position));
-    li.append(button);
-    root.append(li);
+    item.append(button);
+    list.append(item);
     return button;
   });
 }
+
 function render() {
   const step = current.steps[index];
+  const outcome = outcomes[current.id];
   $('demo-mode-description').textContent = SHOWCASE_MODE.explanation;
+  $('case-picker').value = current.id;
   $('case-number').textContent = 'CASE ' + current.number + ' / ' + String(SCENARIOS.length).padStart(2, '0');
   $('case-category').textContent = current.environment.toUpperCase();
-  $('case-outcome').textContent = current.outcome;
   $('case-title').textContent = current.title;
   $('case-subtitle').textContent = current.subtitle;
-  $('request-payload').textContent = payloadFor(current);
+  $('case-outcome').textContent = current.outcome;
+  $('request-payload').textContent = requestText(current);
   $('case-tool').textContent = current.tool;
   $('case-target').textContent = current.target;
   $('case-rule').textContent = current.rule;
   $('case-environment').textContent = current.environment;
+  $('outcome-label').textContent = outcome.title;
+  $('outcome-explanation').textContent = outcome.explanation;
   $('case-evidence').textContent = current.evidence;
-  $('case-limitation').textContent = notes[current.id];
+  $('case-limitation').textContent = limitations[current.id];
   $('case-source').href = current.source;
   $('step-phase').textContent = step.phase;
   $('step-position').textContent = String(index + 1).padStart(2, '0') + ' / ' + String(current.steps.length).padStart(2, '0');
-  $('progress-label').textContent = 'STEP ' + (index + 1) + ' OF ' + current.steps.length;
   $('step-title').textContent = step.title;
   $('step-detail').textContent = step.detail;
   $('step-signal').textContent = step.signal;
-  document.querySelector('.case-canvas').dataset.kind = current.kind;
-  for (const [id, button] of caseButtons) button.setAttribute('aria-pressed', String(id === current.id));
+  $('progress-label').textContent = String(index + 1) + ' OF ' + String(current.steps.length) + ' STAGES';
+  document.querySelector('.case-story').dataset.kind = current.kind;
+
   stageButtons.forEach((button, position) => {
     if (position === index) button.setAttribute('aria-current', 'step');
     else button.removeAttribute('aria-current');
   });
   $('previous-step').disabled = index === 0;
-  const last = index === current.steps.length - 1;
-  const nextCase = SCENARIOS[(SCENARIOS.indexOf(current) + 1) % SCENARIOS.length];
-  $('next-step').textContent = last
-    ? (nextCase === SCENARIOS[0] ? 'Return to case 01 →' : 'Next investigation →')
-    : 'Next step →';
+  $('next-step').disabled = index === current.steps.length - 1;
+  $('next-case').textContent = (SCENARIOS.indexOf(current) === SCENARIOS.length - 1)
+    ? 'Return to first case →'
+    : 'Next investigation →';
 }
-function selectCase(id, push = true) {
-  const next = findScenario(id);
-  if (!next) return;
-  const changed = next.id !== current.id;
-  current = next;
+
+function chooseCase(id, push = true) {
+  const scenario = findScenario(id);
+  if (!scenario) return;
+  const changed = current.id !== scenario.id;
+  current = scenario;
   index = 0;
-  if (changed) buildStages();
-  clearFeedback();
+  if (changed) buildStageButtons();
   render();
-  updateUrl(push && changed);
+  updateHistory(push && changed);
+  feedback('Showing ' + current.title + '.');
 }
 function selectStep(n) {
   if (!Number.isInteger(n) || n < 0 || n >= current.steps.length) return;
   index = n;
-  clearFeedback();
   render();
-  updateUrl();
+  updateHistory(false);
+  feedback();
 }
+
+$('case-picker').disabled = false;
+$('case-picker').addEventListener('change', value => {
+  chooseCase(value.target.value);
+});
 $('previous-step').addEventListener('click', () => selectStep(index - 1));
+$('next-step').addEventListener('click', () => selectStep(index + 1));
 $('restart-case').addEventListener('click', () => selectStep(0));
-$('next-step').addEventListener('click', () => {
-  if (index < current.steps.length - 1) selectStep(index + 1);
-  else selectCase(SCENARIOS[(SCENARIOS.indexOf(current) + 1) % SCENARIOS.length].id);
+$('next-case').addEventListener('click', () => {
+  const scenario = SCENARIOS[(SCENARIOS.indexOf(current) + 1) % SCENARIOS.length];
+  chooseCase(scenario.id);
 });
 $('copy-case-link').addEventListener('click', async () => {
   const url = new URL(window.location.href);
@@ -148,20 +183,19 @@ $('copy-case-link').addEventListener('click', async () => {
   url.searchParams.set('step', String(index + 1));
   try {
     await navigator.clipboard.writeText(url.toString());
-    $('action-feedback').textContent = 'Link copied for this investigation step.';
+    feedback('Link copied for this case and stage.');
   } catch {
-    $('action-feedback').textContent = 'Copy unavailable. You can copy the case and step from the browser address.';
+    feedback('Copy unavailable. This case and stage are represented in your browser address.');
   }
 });
 window.addEventListener('popstate', () => {
-  const next = fromUrl();
+  const next = getLocation();
   const changed = current.id !== next.scenario.id;
   current = next.scenario;
   index = next.step;
-  if (changed) buildStages();
-  clearFeedback();
+  if (changed) buildStageButtons();
   render();
+  feedback();
 });
-buildIndex();
-buildStages();
+buildStageButtons();
 render();
