@@ -37,6 +37,12 @@ test('my guided showcase serves static resources without adding tool or approval
     assert.match(html, /id="case-proof"/);
     assert.match(html, /Not permission/);
     assert.match(html, /id="architecture"/);
+    assert.match(html, /class="authority-chain"/);
+    assert.match(html, /class="architecture-scope"/);
+    assert.match(html, /class="footer-bridge"/);
+    const styles = await (await fetch(base + '/showcase.css')).text();
+    assert.match(styles, /\.chapter-heading\s*\{\s*display:\s*flex;/);
+    assert.doesNotMatch(styles, /margin-left:\s*(150|225)px/);
     assert.match(html, /id="evidence"/);
     assert.match(html, /id="case-limitation"/);
     const script = await (await fetch(base + '/showcase.js')).text();
