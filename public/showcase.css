@@ -162,6 +162,9 @@ h1 span { color: #708092; }
 .footer-action { color: var(--body); border: 0; background: transparent; padding: 8px 2px; font-size: 12px; font-weight: 690; }
 .footer-action:hover { color: var(--blue); }
 .footer-next { color: var(--blue); }
+.footer-bridge { color: var(--blue); text-decoration: none; font-weight: 740; font-size: 12px; margin-right: auto; padding-block: 8px; }
+.footer-bridge:hover { text-decoration: underline; }
+
 
 /* A single technical reading surface, with native OS scope deliberately separate. */
 .architecture-frame {
