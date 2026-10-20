@@ -1,0 +1,3 @@
+# Local agent demo workspace
+These notes are deliberately harmless and are readable by the demo tool.
+Actual secrets should never be placed in this demo workspace.

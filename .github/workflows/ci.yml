@@ -1,0 +1,298 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+      - run: node --check src/checkpoints.mjs
+      - run: node --check src/audit-journal.mjs
+      - run: node --check examples/mcp-isolation-check.mjs
+      - run: node --check examples/mcp-macos-probe.mjs
+      - run: node --check examples/mcp-macos-crash.mjs
+      - run: node --check examples/mcp-macos-xpc-probe.mjs
+      - run: node --check examples/mcp-macos-xpc-notes.mjs
+      - run: node --check examples/mcp-macos-xpc-node-bridge.mjs
+      - run: node --check examples/mcp-macos-xpc-durable.mjs
+      - run: node --check examples/mcp-macos-xpc-authority.mjs
+      - run: node --check examples/mcp-macos-xpc-mcp-acceptance.mjs
+      - run: node --check examples/mcp-macos-xpc-mcp-downstream.mjs
+      - run: node --check examples/mcp-macos-xpc-fault-acceptance.mjs
+      - run: node --check examples/mcp-macos-xpc-service-failure.mjs
+      - run: node --check examples/mcp-macos-xpc-cancellation.mjs
+      - run: node --check examples/mcp-macos-signer-trust.mjs
+      - run: node --check examples/mcp-macos-xpc-peer-negative.mjs
+      - run: node --check examples/mcp-macos-xpc-notes-isolation.mjs
+      - run: node --check examples/mcp-macos-xpc-inbound-peer-negative.mjs
+      - run: node --check examples/mcp-macos-operator-auth.mjs
+      - run: node --check examples/mcp-macos-transfer-touchid.mjs
+      - run: node --check examples/mcp-macos-native-picker.mjs
+      - run: node --check examples/mcp-macos-selected-snapshot.mjs
+      - run: node --check examples/mcp-macos-xpc-transfer-receipt.mjs
+      - run: node --check examples/mcp-macos-xpc-signed-peers.mjs
+      - run: node --check examples/mcp-macos-xpc-inbound-signed.mjs
+      - run: node --check examples/mcp-macos-xpc-native-reviewed.mjs
+      - run: node --check examples/mcp-macos-reviewed-contract-vector.mjs
+      - run: node --check src/macos-reviewed-transaction.mjs
+      - run: node --check src/macos-native-transfer-verifier.mjs
+      - run: node --check src/macos-signer-trust.mjs
+      - run: node --check src/macos-transfer-intent.mjs
+      - run: node --check src/macos-transfer-review.mjs
+      - run: node --check src/macos-transfer-controller.mjs
+      - run: node --check src/macos-controller-keychain.mjs
+      - run: node --check src/macos-controller-pin.mjs
+      - run: node --check examples/mcp-macos-controller-keychain.mjs
+      - run: node --check examples/mcp-macos-controller-audit-vector.mjs
+  macos-native-compile:
+    # Run a real Apple SDK compile, NOT a GUI authentication/file-picker test.
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build native macOS fixture helpers with implicit declarations forbidden
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/bbx-native-compile"
+          mkdir -p "$out"
+          flags=(-fobjc-arc -fblocks -std=c11 -Wall -Wextra -Werror=implicit-function-declaration -O2)
+          xcrun clang "${flags[@]}" -o "$out/SelectedFileSnapshot" native/macos/SelectedFileSnapshot.m -framework AppKit -framework Foundation
+          xcrun clang "${flags[@]}" -o "$out/SyntheticOpenPanel" native/macos/SyntheticOpenPanel.m -framework AppKit -framework Foundation
+          xcrun clang "${flags[@]}" -o "$out/LocalOperatorAuthentication" native/macos/LocalOperatorAuthentication.m -framework Foundation -framework LocalAuthentication
+          xcrun clang "${flags[@]}" -o "$out/TransferReviewAuthenticator" native/macos/TransferReviewAuthenticator.m -framework Foundation -framework LocalAuthentication
+          xcrun clang "${flags[@]}" -o "$out/TransferReceiptHost" native/macos/xpc/TransferReceiptHost.c
+          xcrun clang "${flags[@]}" -fno-objc-arc -o "$out/TransferReceiptWorker" native/macos/xpc/TransferReceiptService.m -framework Foundation
+          # This gate requires Apple's actual SDK XPC symbol declarations;
+          # no Keychain identities or secret material live on CI.
+          xcrun clang "${flags[@]}" -DBBX_TEST_SIGNED_PEER_REQUIREMENT=1 -o "$out/SignedTransferReceiptHost" native/macos/xpc/TransferReceiptHost.c
+          xcrun clang "${flags[@]}" -fno-objc-arc -DBBX_TEST_SIGNED_PEER_REQUIREMENT=1 -o "$out/SignedTransferReceiptWorker" native/macos/xpc/TransferReceiptService.m -framework Foundation
+          xcrun clang "${flags[@]}" -DBBX_TEST_SIGNED_PEER_REQUIREMENT=1 -o "$out/SignedInboundHost" native/macos/xpc/SignedInboundHost.c
+          xcrun clang "${flags[@]}" -fno-objc-arc -DBBX_TEST_SIGNED_PEER_REQUIREMENT=1 -DBBX_TEST_SIGNED_INBOUND_EVIDENCE=1 -o "$out/SignedInboundWorker" native/macos/xpc/TransferReceiptService.m -framework Foundation
+          xcrun clang "${flags[@]}" -fno-objc-arc -DBBX_TEST_SIGNED_PEER_REQUIREMENT=1 -DBBX_TEST_NATIVE_REVIEWED_RECEIPT=1 -DBBX_TEST_EXTERNAL_REVIEW_HANDOFF=1 -o "$out/ReviewedTransferHost" native/macos/xpc/ReviewedTransferHost.m -framework Foundation -framework LocalAuthentication
+          xcrun clang "${flags[@]}" -fno-objc-arc -DBBX_TEST_SIGNED_PEER_REQUIREMENT=1 -DBBX_TEST_NATIVE_REVIEWED_RECEIPT=1 -o "$out/ReviewedTransferWorker" native/macos/xpc/TransferReceiptService.m -framework Foundation
+          xcrun clang "${flags[@]}" -o "$out/ReviewedTransactionVector" native/macos/xpc/ReviewedTransactionVector.c
+          native_tx=$("$out/ReviewedTransactionVector")
+          node_tx=$(node examples/mcp-macos-reviewed-contract-vector.mjs)
+          if [ "$native_tx" != "$node_tx" ] || [ "${#native_tx}" -ne 64 ]; then
+            echo "ERROR: Native and Node canonical review transactions differ."
+            exit 1
+          fi
+          echo "PASS: Native C and Node derive identical canonical reviewed transaction IDs from a fixed synthetic test vector."
+          xcrun clang "${flags[@]}" -o "$out/ReviewedHandoffVector" native/macos/xpc/ReviewedHandoffVector.c
+          node examples/mcp-macos-reviewed-contract-vector.mjs --handoff > "$out/review-wire.txt"
+          "$out/ReviewedHandoffVector" valid < "$out/review-wire.txt"
+          sed 's/^version=1$/version=2/' "$out/review-wire.txt" | "$out/ReviewedHandoffVector" invalid
+          sed 's/^noteName=bbx-test-reviewed.txt$/noteName=bbx-test-other.txt/' "$out/review-wire.txt" | "$out/ReviewedHandoffVector" invalid
+          sed 's/^transactionId=./transactionId=f/' "$out/review-wire.txt" | "$out/ReviewedHandoffVector" invalid
+          sed 's/^reviewId=1/reviewId=f/' "$out/review-wire.txt" | "$out/ReviewedHandoffVector" invalid
+          sed 's/^nonce=a/nonce=f/' "$out/review-wire.txt" | "$out/ReviewedHandoffVector" invalid
+          sed 's/^sha256=6/sha256=f/' "$out/review-wire.txt" | "$out/ReviewedHandoffVector" invalid
+          sed 's/^byteLength=39$/byteLength=039/' "$out/review-wire.txt" | "$out/ReviewedHandoffVector" invalid
+          sed 's/^issuedAt=1790000000000$/issuedAt=01790000000000/' "$out/review-wire.txt" | "$out/ReviewedHandoffVector" invalid
+          sed 's/^operation=import$/operation=export/' "$out/review-wire.txt" | "$out/ReviewedHandoffVector" invalid
+          sed '$d' "$out/review-wire.txt" | "$out/ReviewedHandoffVector" invalid
+          (cat "$out/review-wire.txt"; printf 'approved=true\n') | "$out/ReviewedHandoffVector" invalid
+          echo "PASS: Native handoff envelope parser accepts only exact preissued synthetic reviewed data."
+          xcrun clang "${flags[@]}" -o "$out/ReviewedAuthorityVector" native/macos/xpc/ReviewedAuthorityVector.c
+          node examples/mcp-macos-reviewed-contract-vector.mjs --auth > "$out/authority-wire.txt"
+          "$out/ReviewedAuthorityVector" valid < "$out/authority-wire.txt"
+          node examples/mcp-macos-reviewed-contract-vector.mjs --auth-bad-mac | "$out/ReviewedAuthorityVector" invalid
+          node examples/mcp-macos-reviewed-contract-vector.mjs --auth-bad-reservation | "$out/ReviewedAuthorityVector" invalid
+          node examples/mcp-macos-reviewed-contract-vector.mjs --auth-forged-review | "$out/ReviewedAuthorityVector" invalid
+          sed 's/^version=1$/version=2/' "$out/authority-wire.txt" | "$out/ReviewedAuthorityVector" invalid
+          sed '$d' "$out/authority-wire.txt" | "$out/ReviewedAuthorityVector" invalid
+          (cat "$out/authority-wire.txt"; printf 'approved=true\n') | "$out/ReviewedAuthorityVector" invalid
+          echo "PASS: Independent native HMAC contract verification rejects recomputed digest forgery; fixture key is PUBLIC, no controller authority proven."
+          node examples/mcp-macos-reviewed-rsa-vector.mjs "$out"
+          xcrun clang "${flags[@]}" -I"$out" -o "$out/ReviewedSignedAuthorityVector" native/macos/xpc/ReviewedSignedAuthorityVector.c -framework Security
+          xcrun clang "${flags[@]}" -fno-objc-arc -I"$out" -DBBX_TEST_SIGNED_PEER_REQUIREMENT=1 -DBBX_TEST_NATIVE_REVIEWED_RECEIPT=1 -DBBX_TEST_EXTERNAL_REVIEW_HANDOFF=1 -DBBX_TEST_RSA_CONTROLLER_HANDOFF=1 -o "$out/ReviewedSignedTransferHost" native/macos/xpc/ReviewedTransferHost.m -framework Foundation -framework LocalAuthentication -framework Security
+          for old_mode in handoff-approved handoff-invalid approved cancel expired; do
+            set +e
+            response=$("$out/ReviewedSignedTransferHost" "$old_mode")
+            code=$?
+            set -e
+            if [ "$code" -ne 90 ] || [ "$response" != "BBX_REVIEWED_XPC_BAD_ARGS" ]; then
+              echo "ERROR: Pinned RSA host allowed legacy unsigned or standalone mode."
+              exit 1
+            fi
+          done
+          echo "PASS: Pinned RSA native host exposes no legacy unsigned handoff or standalone approval command."
+          "$out/ReviewedSignedAuthorityVector" valid < "$out/rsa-valid.txt"
+          for input in rsa-bad-signature rsa-bad-reservation rsa-forged-review rsa-other-controller rsa-truncated rsa-extra-field; do
+            "$out/ReviewedSignedAuthorityVector" invalid < "$out/$input.txt"
+          done
+          echo "PASS: Pinned RSA-PSS native verifier rejected another signing key, forged review, and modified reservation."
+          xcrun clang "${flags[@]}" -o "$out/ReviewedDurableReplayVector" native/macos/xpc/ReviewedDurableReplayVector.c
+          replay="$out/native-replay-state"
+          mkdir -m 700 "$replay"
+          "$out/ReviewedDurableReplayVector" observe-empty "$replay"
+          "$out/ReviewedDurableReplayVector" fresh "$replay"
+          "$out/ReviewedDurableReplayVector" observe-spent "$replay"
+          "$out/ReviewedDurableReplayVector" observe-foreign "$replay"
+          "$out/ReviewedDurableReplayVector" observe-bad-id "$replay"
+          "$out/ReviewedDurableReplayVector" replay "$replay"
+          "$out/ReviewedDurableReplayVector" other-id "$replay"
+          "$out/ReviewedDurableReplayVector" bad-nonce "$replay"
+          "$out/ReviewedDurableReplayVector" bad-id "$replay"
+          chmod 755 "$replay"
+          "$out/ReviewedDurableReplayVector" loose-dir "$replay"
+          "$out/ReviewedDurableReplayVector" observe-loose-dir "$replay"
+          chmod 700 "$replay"
+          printf 'DO_NOT_TOUCH' > "$out/marker-target"
+          ln -s "$out/marker-target" "$replay/nonce-00000000-0000-4000-8000-000000000000.spent"
+          "$out/ReviewedDurableReplayVector" symlink-marker "$replay"
+          "$out/ReviewedDurableReplayVector" observe-symlink "$replay"
+          printf 'CORRUPT\n' > "$replay/nonce-abcdef12-3456-4789-8abc-123456789abc.spent"
+          "$out/ReviewedDurableReplayVector" observe-corrupt "$replay"
+          if [ "$(cat "$out/marker-target")" != "DO_NOT_TOUCH" ]; then
+            echo "ERROR: Native replay marker symlink affected unrelated fixture."
+            exit 1
+          fi
+          race="$out/native-replay-race"
+          mkdir -m 700 "$race"
+          for i in $(seq 1 8); do
+            "$out/ReviewedDurableReplayVector" race "$race" > "$out/race-$i.txt" &
+          done
+          wait
+          fresh=$(grep -h -x 'BBX_DURABLE_NATIVE_FRESH' "$out"/race-*.txt | wc -l | tr -d ' ')
+          replayed=$(grep -h -x 'BBX_DURABLE_NATIVE_REPLAY' "$out"/race-*.txt | wc -l | tr -d ' ')
+          if [ "$fresh" -ne 1 ] || [ "$replayed" -ne 7 ]; then
+            echo "ERROR: Multiple native processes consumed one nonce or unexpected verdict."
+            exit 1
+          fi
+          xcrun clang "${flags[@]}" -fno-objc-arc -DBBX_TEST_NATIVE_REVIEWED_RECEIPT=1 -DBBX_TEST_SIGNED_PEER_REQUIREMENT=1 -DBBX_TEST_DURABLE_REPLAY=1 -o "$out/ReviewedDurableWorker" native/macos/xpc/TransferReceiptService.m -framework Foundation
+          xcrun clang "${flags[@]}" -fno-objc-arc -I"$out" -DBBX_TEST_SIGNED_PEER_REQUIREMENT=1 -DBBX_TEST_NATIVE_REVIEWED_RECEIPT=1 -DBBX_TEST_EXTERNAL_REVIEW_HANDOFF=1 -DBBX_TEST_RSA_CONTROLLER_HANDOFF=1 -DBBX_TEST_DURABLE_REPLAY=1 -o "$out/ReviewedDurableSignedHost" native/macos/xpc/ReviewedTransferHost.m -framework Foundation -framework LocalAuthentication -framework Security
+          for old_mode in handoff-approved handoff-rsa-approved approved cancel expired; do
+            set +e
+            response=$("$out/ReviewedDurableSignedHost" "$old_mode")
+            code=$?
+            set -e
+            if [ "$code" -ne 90 ] || [ "$response" != "BBX_REVIEWED_XPC_BAD_ARGS" ]; then
+              echo "ERROR: Durable RSA host exposed an unsigned or non-durable entry point."
+              exit 1
+            fi
+          done
+          echo "PASS: Durable RSA native host compiled and old unsigned modes remain disabled."
+          # Worker lifecycle control exists ONLY in this diagnostic build.
+          xcrun clang "${flags[@]}" -fno-objc-arc -DBBX_TEST_NATIVE_REVIEWED_RECEIPT=1 -DBBX_TEST_SIGNED_PEER_REQUIREMENT=1 -DBBX_TEST_DURABLE_REPLAY=1 -DBBX_TEST_DURABLE_WORKER_RESTART=1 -o "$out/ReviewedWorkerRestartWorker" native/macos/xpc/TransferReceiptService.m -framework Foundation
+          xcrun clang "${flags[@]}" -fno-objc-arc -I"$out" -DBBX_TEST_SIGNED_PEER_REQUIREMENT=1 -DBBX_TEST_NATIVE_REVIEWED_RECEIPT=1 -DBBX_TEST_EXTERNAL_REVIEW_HANDOFF=1 -DBBX_TEST_RSA_CONTROLLER_HANDOFF=1 -DBBX_TEST_DURABLE_REPLAY=1 -DBBX_TEST_DURABLE_WORKER_RESTART=1 -o "$out/ReviewedWorkerRestartHost" native/macos/xpc/ReviewedTransferHost.m -framework Foundation -framework LocalAuthentication -framework Security
+          for old_mode in approved cancel expired handoff-approved handoff-rsa-approved handoff-rsa-invalid handoff-rsa-durable-approved-without-review; do
+            set +e
+            response=$("$out/ReviewedWorkerRestartHost" "$old_mode")
+            code=$?
+            set -e
+            if [ "$code" -ne 90 ] || [ "$response" != "BBX_REVIEWED_XPC_BAD_ARGS" ]; then
+              echo "ERROR: Diagnostic restart host allowed a legacy command."
+              exit 1
+            fi
+          done
+          echo "PASS: Restart-only signed host and signed-peer XPC worker compiled; legacy commands denied without biometrics."
+          # Fault injection is an EXTRA, strictly diagnostic, opt-in compile mode.
+          xcrun clang "${flags[@]}" -fno-objc-arc -DBBX_TEST_NATIVE_REVIEWED_RECEIPT=1 -DBBX_TEST_SIGNED_PEER_REQUIREMENT=1 -DBBX_TEST_DURABLE_REPLAY=1 -DBBX_TEST_DURABLE_WORKER_RESTART=1 -DBBX_TEST_CRASH_RECONCILE=1 -o "$out/ReviewedCrashWorker" native/macos/xpc/TransferReceiptService.m -framework Foundation
+          xcrun clang "${flags[@]}" -fno-objc-arc -I"$out" -DBBX_TEST_SIGNED_PEER_REQUIREMENT=1 -DBBX_TEST_NATIVE_REVIEWED_RECEIPT=1 -DBBX_TEST_EXTERNAL_REVIEW_HANDOFF=1 -DBBX_TEST_RSA_CONTROLLER_HANDOFF=1 -DBBX_TEST_DURABLE_REPLAY=1 -DBBX_TEST_DURABLE_WORKER_RESTART=1 -DBBX_TEST_CRASH_RECONCILE=1 -o "$out/ReviewedCrashHost" native/macos/xpc/ReviewedTransferHost.m -framework Foundation -framework LocalAuthentication -framework Security
+          for old_mode in approved cancel expired handoff-approved handoff-rsa-approved handoff-rsa-invalid handoff-rsa-durable-replay garbage; do
+            set +e
+            response=$("$out/ReviewedCrashHost" "$old_mode")
+            code=$?
+            set -e
+            if [ "$code" -ne 90 ] || [ "$response" != "BBX_REVIEWED_XPC_BAD_ARGS" ]; then
+              echo "ERROR: Crash reconciliation host exposed legacy or invalid invocation."
+              exit 1
+            fi
+          done
+          echo "PASS: Diagnostic-only crash worker and signed host built with pre/post nonce crash injection, exact allowlists and no GUI execution."
+          xcrun clang "${flags[@]}" -fno-objc-arc -o "$out/KeychainControllerSigner" native/macos/xpc/KeychainControllerSigner.m -framework Foundation -framework Security -framework LocalAuthentication
+          set +e
+          bad_output=$("$out/KeychainControllerSigner" unexpected)
+          bad_code=$?
+          empty_signature=$("$out/KeychainControllerSigner" sign </dev/null)
+          empty_code=$?
+          set -e
+          if [ "$bad_code" -ne 90 ] || [ -n "$bad_output" ] || [ "$empty_code" -ne 87 ] || [ -n "$empty_signature" ]; then
+            echo "ERROR: Provisioned Keychain signer exposed an unexpected command or unvalidated signature."
+            exit 1
+          fi
+          echo "PASS: Provisioned Keychain RSA helper compiled and invalid/empty signing calls denied; no Keychain identity created on CI."
+          # An independent native parser verifies exact HMAC audit evidence.
+          xcrun clang "${flags[@]}" -fno-objc-arc -o "$out/ControllerAuditVector" native/macos/xpc/ControllerAuditVector.m -framework Foundation
+          auditdir="$out/controller-audit-good"
+          mkdir -m 700 "$auditdir"
+          node examples/mcp-macos-controller-audit-vector.mjs "$auditdir"
+          "$out/ControllerAuditVector" valid "$auditdir" < "$auditdir/audit-wire.txt"
+          cp "$auditdir/audit-wire.txt" "$out/native-audit-bad-wire.txt"
+          node -e 'const fs=require("fs");const p=process.argv[1];const s=fs.readFileSync(p,"utf8");fs.writeFileSync(p,s.replace(/reservationMac=[a-f0-9]{64}/,"reservationMac="+"f".repeat(64)));' "$out/native-audit-bad-wire.txt"
+          "$out/ControllerAuditVector" invalid "$auditdir" < "$out/native-audit-bad-wire.txt"
+          tampered="$out/controller-audit-tampered"
+          cp -R "$auditdir" "$tampered"
+          node -e 'const fs=require("fs");const p=process.argv[1];const s=fs.readFileSync(p,"utf8");if(!s.includes("MAC_TRANSFER_APPROVED"))process.exit(87);fs.writeFileSync(p,s.replace("MAC_TRANSFER_APPROVED","MAC_TRANSFER_DENIED"));' "$tampered/handoff-audit.jsonl"
+          "$out/ControllerAuditVector" invalid "$tampered" < "$auditdir/audit-wire.txt"
+          stale="$out/controller-audit-stale"
+          cp -R "$auditdir" "$stale"
+          node -e 'const fs=require("fs");const p=process.argv[1];const j=JSON.parse(fs.readFileSync(p,"utf8"));j.seq+=1;fs.writeFileSync(p,JSON.stringify(j)+"\n");' "$stale/handoff-audit.jsonl.anchor.json"
+          "$out/ControllerAuditVector" invalid "$stale" < "$auditdir/audit-wire.txt"
+          loose="$out/controller-audit-loose"
+          cp -R "$auditdir" "$loose"
+          chmod 755 "$loose"
+          "$out/ControllerAuditVector" invalid "$loose" < "$auditdir/audit-wire.txt"
+          echo "PASS: Native HMAC verifier accepted exact reservation and denied stale, forged, modified and unsafe audit inputs."
+          xcrun clang "${flags[@]}" -fno-objc-arc -I"$out" -DBBX_TEST_SIGNED_PEER_REQUIREMENT=1 -DBBX_TEST_NATIVE_REVIEWED_RECEIPT=1 -DBBX_TEST_EXTERNAL_REVIEW_HANDOFF=1 -DBBX_TEST_RSA_CONTROLLER_HANDOFF=1 -DBBX_TEST_DURABLE_REPLAY=1 -DBBX_TEST_DURABLE_WORKER_RESTART=1 -DBBX_TEST_CRASH_RECONCILE=1 -DBBX_TEST_KEYCHAIN_FULL_SUITE=1 -o "$out/ReviewedKeychainSuiteHost" native/macos/xpc/ReviewedTransferHost.m -framework Foundation -framework LocalAuthentication -framework Security
+          for old_mode in approved cancel expired handoff-approved handoff-rsa-approved handoff-rsa-invalid garbage; do
+            set +e
+            response=$("$out/ReviewedKeychainSuiteHost" "$old_mode")
+            code=$?
+            set -e
+            if [ "$code" -ne 90 ] || [ "$response" != "BBX_REVIEWED_XPC_BAD_ARGS" ]; then
+              echo "ERROR: Combined signed Keychain host exposed unsigned or legacy invocation."
+              exit 1
+            fi
+          done
+          echo "PASS: Combined pinned Keychain restart/crash host compiles with strictly bounded signed RSA modes; GUI consent still requires a Mac."
+          echo "PASS: Real XPC worker process exit/PID/instance evidence requires an interactive development Mac."
+          echo "PASS: Durable native replay rejects symlinks and forged nonce metadata; 8 concurrent processes yield exactly one committed nonce."
+          echo "PASS: Twenty-seven native fixture executables compiled with Apple's SDK; fault injection and real worker restarts still require interactive Mac acceptance."
+  official-mcp-sdk-interop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # Separate suite: this client is only for interoperability testing,
+      # not a runtime dependency of the gateway. Pin a patched v2 release.
+      - run: npm install --no-save --package-lock=false @modelcontextprotocol/client@2.3.1
+      - run: npm run test:mcp-sdk
+  sandbox-linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install official Bubblewrap package
+        run: sudo apt-get update && sudo apt-get install -y bubblewrap
+      - name: Required Linux sandbox, or explicit fail-closed OS denial
+        shell: bash
+        run: |
+          set +e
+          timeout 35s env MCP_SANDBOX=required npm run mcp:smoke > /tmp/bwrap-check.log 2>&1
+          result=$?
+          set -e
+          cat /tmp/bwrap-check.log
+          if [ "$result" -eq 0 ]; then
+            echo "Bubblewrap executable and kernel supported sandboxed MCP read."
+            timeout 35s env MCP_SANDBOX=required npm run mcp:modern
+          elif grep -E 'bwrap:.*(Operation not permitted|Permission denied)' /tmp/bwrap-check.log && grep -q 'MCP smoke failed:' /tmp/bwrap-check.log; then
+            echo '::warning::GitHub runner kernel blocks Bubblewrap; fail-closed gateway verified. Full sandbox integration must be tested on a compatible Linux host.'
+          else
+            echo 'Unexpected sandbox integration failure.'
+            exit 1
+          fi
