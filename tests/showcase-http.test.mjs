@@ -18,7 +18,8 @@ test('my guided showcase serves static resources without adding tool or approval
     for (const [route, type, snippet] of [
       ['/showcase', 'text/html', 'Illustrative walkthrough'],
       ['/showcase.js', 'application/javascript', 'showcase-scenarios.mjs'],
-      ['/showcase.css', 'text/css', 'tour-grid'],
+      ['/showcase.css', 'text/css', 'workbench'],
+      ['/showcase-mark.svg', 'image/svg\\+xml', '<svg'],
       ['/showcase-scenarios.mjs', 'application/javascript', 'SHOWCASE_MODE']
     ]) {
       const response = await fetch(base + route);
@@ -28,6 +29,15 @@ test('my guided showcase serves static resources without adding tool or approval
       assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
       assert.match(await response.text(), new RegExp(snippet, 'i'));
     }
+    const html = await (await fetch(base + '/showcase')).text();
+    assert.match(html, /href="\\/showcase"/);
+    assert.match(html, /id="scenario-list"/);
+    assert.match(html, /id="request-payload"/);
+    assert.match(html, /id="case-limitation"/);
+    const script = await (await fetch(base + '/showcase.js')).text();
+    assert.doesNotMatch(script, /\\bfetch\\s*\\(|XMLHttpRequest|sendBeacon/);
+    assert.match(script, /history\\.pushState/);
+    assert.match(script, /navigator\\.clipboard/);
     assert.equal((await fetch(base + '/api/health')).status, 200);
     assert.equal((await fetch(base + '/showcase', {method:'POST'})).status, 404);
     assert.equal((await fetch(base + '/docs/SECURITY.md')).status, 404);
