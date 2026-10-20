@@ -164,23 +164,55 @@
     <section class="chapter page-width" id="architecture" aria-labelledby="architecture-title">
       <div class="chapter-heading">
         <p class="chapter-marker">02 <span aria-hidden="true">/</span> UNDERSTAND THE BOUNDARIES</p>
-        <div><h2 id="architecture-title">Not one universal sandbox.</h2><p>The cases show different controls. Knowing which layer makes each decision is essential to understanding the security claim.</p></div>
+        <div><h2 id="architecture-title">Not one universal sandbox.</h2><p>A request is checked in the Node control plane. The native macOS worker has a different, narrower operating-system boundary.</p></div>
       </div>
       <div class="architecture-frame">
-        <div class="architecture-flow" aria-label="Simplified routed tool-call path">
-          <div><span>REQUEST</span><strong>Model / MCP client</strong><p>Proposes a tool call</p></div>
-          <span class="flow-arrow" aria-hidden="true">→</span>
-          <div class="boundary-box"><span>APPLICATION CONTROL</span><strong>Node guard</strong><p>Allowlist + policy checks</p></div>
-          <span class="flow-arrow" aria-hidden="true">→</span>
-          <div><span>CONDITIONAL</span><strong>Bounded execution</strong><p>Only if permitted / reviewed</p></div>
+        <div class="architecture-model">
+          <div class="architecture-model-heading">
+            <span>THE ROUTED TOOL-CALL PATH</span>
+            <span>NODE / APPLICATION ENFORCEMENT</span>
+          </div>
+          <ol class="authority-chain">
+            <li>
+              <span class="chain-index">01</span>
+              <div class="chain-content">
+                <h3>A request reaches the guard</h3>
+                <p>A model or MCP client proposes an operation. That request does not carry execution authority on its own.</p>
+              </div>
+            </li>
+            <li class="chain-decision">
+              <span class="chain-index">02</span>
+              <div class="chain-content">
+                <h3>The policy makes a decision</h3>
+                <p>The routed Node guard checks tool permissions, inputs, and applicable deterministic rules.</p>
+                <div class="decision-routes" aria-label="Possible guarded decisions">
+                  <div><strong>Denied</strong><span>Stop before adapter dispatch</span></div>
+                  <div><strong>Needs review</strong><span>Pause an eligible exact note write</span></div>
+                  <div><strong>Allowed</strong><span>Continue within the permitted scope</span></div>
+                </div>
+              </div>
+            </li>
+            <li>
+              <span class="chain-index">03</span>
+              <div class="chain-content">
+                <h3>Execution and evidence stay bounded</h3>
+                <p>Only a permitted or specifically reviewed request reaches guarded execution. Local audit records support subsequent integrity checks.</p>
+              </div>
+            </li>
+          </ol>
         </div>
-        <div class="architecture-exceptions">
-          <div><span class="architecture-index">01 / OPTIONAL GATE</span><h3>Human review</h3><p>Eligible note writes pause for one-time approval of a specific target and content. Review is not general filesystem permission.</p></div>
-          <div><span class="architecture-index">02 / SEPARATE OS SCOPE</span><h3>macOS XPC worker</h3><p>A narrow signed worker is subject to App Sandbox controls. The separately signed worker-source diagnostic is not a fresh test of the installed worker.</p></div>
-          <div><span class="architecture-index">03 / AUDIT TRAIL</span><h3>Authenticated records</h3><p>Local HMAC-linked events and checkpoints support integrity checks, but do not constitute external tamper-proof custody.</p></div>
-        </div>
+        <aside class="architecture-scope" aria-labelledby="scope-title">
+          <p class="scope-eyebrow">A SEPARATE ENFORCEMENT LAYER</p>
+          <h3 id="scope-title">The macOS worker has its own boundary.</h3>
+          <p>The signed XPC worker is subject to App Sandbox controls for its narrow supported operations. A separately signed worker-source diagnostic produced the documented host-private file and loopback denials.</p>
+          <p class="scope-warning"><strong>Not a universal sandbox.</strong> The Node control plane remains outside that native App Sandbox. The diagnostic is not a fresh test of the byte-identical installed worker.</p>
+          <a class="scope-link" href="https://github.com/christophervalle85/agent-black-box/blob/main/docs/v0.8-final-native-acceptance.md" target="_blank" rel="noopener noreferrer">Review the native acceptance record <span aria-hidden="true">↗</span></a>
+        </aside>
       </div>
-      <p class="architecture-caveat"><strong>Important:</strong> The Node parent is not enclosed by the native App Sandbox. These enforcement layers are not interchangeable.</p>
+      <div class="architecture-support">
+        <div><span>OPERATOR AUTHORITY</span><h3>Human review is specific.</h3><p>Eligible note writes require a one-time decision about the reviewed target and content—not general filesystem access.</p></div>
+        <div><span>EVIDENCE INTEGRITY</span><h3>Audit records are authenticated.</h3><p>HMAC-linked records and checkpoints support local verification, within documented same-user and custody limitations.</p></div>
+      </div>
     </section>
 
     <section class="chapter page-width evidence-section" id="evidence" aria-labelledby="evidence-title">
