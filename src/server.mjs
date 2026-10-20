@@ -21,7 +21,8 @@ const publicFiles = {
   '/showcase': ['showcase.html', 'text/html; charset=utf-8'],
   '/showcase.js': ['showcase.js', 'application/javascript; charset=utf-8'],
   '/showcase.css': ['showcase.css', 'text/css; charset=utf-8'],
-  '/showcase-scenarios.mjs': ['showcase-scenarios.mjs', 'application/javascript; charset=utf-8']
+  '/showcase-scenarios.mjs': ['showcase-scenarios.mjs', 'application/javascript; charset=utf-8'],
+  '/showcase-mark.svg': ['showcase-mark.svg', 'image/svg+xml; charset=utf-8']
 };
 
 function sendJson(res, status, data) {

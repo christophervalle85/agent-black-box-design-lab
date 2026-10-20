@@ -3,119 +3,233 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#121511">
-  <meta name="description" content="Agent Black Box — a guided, evidence-scoped tour of AI agent security decisions and sandbox boundaries.">
-  <title>Field Guide · Agent Black Box</title>
+  <meta name="theme-color" content="#f7f8fa">
+  <meta name="description" content="Follow a guarded AI-agent request from proposed tool call to decision, then inspect the supporting evidence and limitations.">
+  <title>Follow a request · Agent Black Box</title>
+  <link rel="icon" type="image/svg+xml" href="/showcase-mark.svg">
   <link rel="stylesheet" href="/showcase.css">
   <script type="module" src="/showcase.js"></script>
 </head>
 <body>
-  <a class="skip" href="#cases">Skip to scenarios</a>
-  <div class="canvas-grid" aria-hidden="true"></div>
+  <a class="skip-link" href="#cases">Skip to the investigation</a>
   <header class="site-header">
-    <a class="brand" href="/" aria-label="Agent Black Box — operational dashboard">
-      <span class="brand-mark" aria-hidden="true">▣</span>
-      <span class="brand-text"><strong>BLACK BOX</strong><small>AGENT SECURITY / 0.9 LAB</small></span>
+    <a class="brand" href="/showcase" aria-label="Agent Black Box, showcase home">
+      <svg class="brand-symbol" viewBox="0 0 40 40" width="40" height="40" aria-hidden="true" focusable="false">
+        <rect width="40" height="40" rx="9" fill="#182638"/>
+        <path d="M11 12h7m-7 0v16h7m11-16h-7m7 0v16h-7" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="square"/>
+        <path d="M17 20h6" stroke="#82a9ff" stroke-width="2.5" stroke-linecap="square"/>
+      </svg>
+      <span class="brand-copy"><strong>BLACK BOX</strong><span>Agent security research</span></span>
     </a>
-    <nav class="header-links" aria-label="Main navigation">
-      <a class="header-link" href="/">Operational dashboard <span aria-hidden="true">↗</span></a>
-      <a class="header-link selected" href="/showcase" aria-current="page">Field guide</a>
-      <a class="header-link" href="https://github.com/christophervalle85/agent-black-box" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+    <nav class="primary-nav" aria-label="Main navigation">
+      <a href="#cases">Investigate</a>
+      <a href="#architecture">Enforcement boundaries</a>
+      <a href="#evidence">Evidence</a>
     </nav>
+    <a class="header-external" href="https://github.com/christophervalle85/agent-black-box" target="_blank" rel="noopener noreferrer">Source code <span aria-hidden="true">↗</span></a>
   </header>
 
   <main>
-    <section class="intro" aria-labelledby="page-title">
+    <section class="intro page-width" id="overview" aria-labelledby="page-title">
       <div class="intro-copy">
-        <p class="kicker"><span class="kicker-dash"></span> FIELD GUIDE <span class="kicker-num">/ 001</span></p>
-        <h1 id="page-title">Agents move fast.<br><em>Boundaries hold.</em></h1>
-        <p class="lede">A guided look at the moment an AI agent asks to act—and the policy, approval, audit, or operating-system control that answers.</p>
-        <div class="intro-capsules" aria-label="Demonstration constraints">
-          <span>NO API KEY</span><span>NO LIVE MODEL</span><span>NO FILE WRITES</span>
+        <p class="eyebrow">A SECURITY ENGINEERING CASE STUDY</p>
+        <h1 id="page-title">A tool call is a request.<br><span>Not permission.</span></h1>
+        <p class="lead">An AI agent can ask to read, write, or execute. Agent Black Box demonstrates where selected requests are evaluated—and what happens when a security boundary says no, or requires review.</p>
+        <a class="intro-link" href="#cases">Follow a blocked request <span aria-hidden="true">↓</span></a>
+      </div>
+      <div class="intro-aside">
+        <span class="intro-aside-number">THE IDEA / 01</span>
+        <p><strong>The question isn't what the model wants.</strong> It's what the system permits it to do.</p>
+        <p class="intro-aside-detail">Explore a reconstructed request below, then inspect the enforcement layer and evidence supporting the outcome.</p>
+      </div>
+    </section>
+
+    <div class="mode-disclosure page-width" role="note">
+      <span class="mode-indicator" aria-hidden="true"></span>
+      <strong>Illustrative walkthrough</strong>
+      <p id="demo-mode-description">These guided steps explain documented tests. They do not execute tools, issue approvals, produce local audit events, or run fresh native diagnostics.</p>
+    </div>
+
+    <section class="chapter page-width" id="cases" aria-labelledby="cases-title">
+      <div class="chapter-heading">
+        <p class="chapter-marker">01 <span aria-hidden="true">/</span> FOLLOW A REQUEST</p>
+        <div>
+          <h2 id="cases-title">See exactly where a decision happens.</h2>
+          <p>Start with a sensitive-file read. Select a different case when you're ready to explore another control.</p>
         </div>
       </div>
-      <div class="intro-visual" aria-hidden="true">
-        <div class="orb-orbit orbit-one"></div>
-        <div class="orb-orbit orbit-two"></div>
-        <div class="orb-center"><span>⏣</span><small>POLICY<br>BOUNDARY</small></div>
-        <span class="visual-tag tag-one">REQUEST</span>
-        <span class="visual-tag tag-two">VERIFY</span>
-        <span class="visual-tag tag-three">ENFORCE</span>
+
+      <div class="case-toolbar">
+        <div class="case-picker-wrap">
+          <label for="case-picker">Choose an investigation</label>
+          <select id="case-picker" disabled>
+            <option value="restricted-file">01 — Sensitive file read</option>
+            <option value="shell-command">02 — Shell execution</option>
+            <option value="human-approval">03 — One-time human approval</option>
+            <option value="path-traversal">04 — Workspace traversal</option>
+            <option value="native-boundary">05 — macOS signed diagnostic</option>
+            <option value="audit-tamper">06 — Audit tampering</option>
+          </select>
+        </div>
+        <div class="case-toolbar-note"><span>6 documented cases</span><span class="case-toolbar-sep" aria-hidden="true">·</span><span>Read-only reconstruction</span></div>
       </div>
-    </section>
+      <noscript><p class="no-js-message">The first case is readable without JavaScript. Enable JavaScript to choose cases and explore individual stages.</p></noscript>
 
-    <section class="disclosure" aria-labelledby="disclosure-title">
-      <span class="disclosure-icon" aria-hidden="true">◎</span>
-      <div><strong id="disclosure-title">Illustrative walkthrough, not a live security test.</strong>
-      <p id="demo-mode-description">The guided steps reproduce documented behavior; this page never authorizes a tool, modifies the audit log, or probes the sandbox.</p></div>
-      <span class="disclosure-version">STORYBOARD / v0.9</span>
-    </section>
+      <article class="case-story" data-kind="policy" aria-labelledby="case-title">
+        <header class="case-heading">
+          <div class="case-overline"><span id="case-number">CASE 01 / 06</span><span class="case-dot" aria-hidden="true"></span><span id="case-category">NODE POLICY GUARD</span></div>
+          <div class="case-title-row"><h3 id="case-title">A secret the agent cannot read</h3><span id="case-outcome" class="outcome-pill">BLOCKED</span></div>
+          <p id="case-subtitle">The model requests .env. Policy catches it before the adapter runs.</p>
+        </header>
 
-    <section class="tour" id="cases" aria-labelledby="tour-title">
-      <div class="section-heading">
-        <div><p class="kicker">THE DECISION FILES</p><h2 id="tour-title">Six moments at the boundary.</h2></div>
-        <p>Select a case. Follow each decision from request to outcome.</p>
-      </div>
-      <div class="tour-grid">
-        <aside class="cases-sidebar">
-          <div class="sidebar-heading"><span>CASE INDEX</span><span>01 — 06</span></div>
-          <div id="scenario-list" class="scenario-list" aria-label="Security scenarios"></div>
-          <div class="sidebar-foot">
-            <span class="sidebar-foot-mark" aria-hidden="true">↗</span>
-            <p>Built from the v0.8 control surfaces and their recorded acceptance scope.</p>
-          </div>
-        </aside>
+        <div class="story-content">
+          <div class="story-primary">
+            <section class="story-section request-section" aria-labelledby="request-heading">
+              <div class="story-step-heading"><span class="step-number">01</span><div><p class="story-eyebrow">INPUT</p><h4 id="request-heading">What was requested?</h4></div></div>
+              <div class="request-code">
+                <div class="request-code-header"><span>SYNTHETIC REQUEST</span><span>NOT EXECUTED BY THIS PAGE</span></div>
+                <pre><code id="request-payload">{
+  "tool": "file.read",
+  "arguments": { "path": ".env" }
+}</code></pre>
+              </div>
+              <p class="request-explainer" id="request-explainer">This is an illustrative request payload, not an actual file read.</p>
+            </section>
 
-        <article class="case-panel" aria-labelledby="case-title">
-          <div class="case-topline">
-            <span class="case-label" id="case-number">CASE 01 / 06</span>
-            <span class="case-outcome" id="case-outcome">BLOCKED</span>
+            <section class="story-section evaluation-section" aria-labelledby="evaluation-heading">
+              <div class="story-step-heading"><span class="step-number">02</span><div><p class="story-eyebrow">EVALUATION</p><h4 id="evaluation-heading">How was it evaluated?</h4></div></div>
+              <p class="section-guidance">Choose a stage to see the specific check and its consequence. This is a reconstruction—not live execution.</p>
+              <ol id="scenario-timeline" class="stage-list" aria-label="Stages of the illustrated request">
+                <li><span class="stage-placeholder">Request</span></li>
+                <li><span class="stage-placeholder">Evaluate</span></li>
+                <li><span class="stage-placeholder">Decision</span></li>
+              </ol>
+              <div class="stage-focus">
+                <div class="stage-focus-top"><span id="step-phase">REQUEST</span><span id="step-position">01 / 03</span></div>
+                <h5 id="step-title">The agent asks for a credential file</h5>
+                <p id="step-detail" aria-live="polite" aria-atomic="true">The proposed tool call targets .env in the workspace.</p>
+                <div class="signal-line"><span>STAGE SIGNAL</span><code id="step-signal">file.read · path=.env</code></div>
+              </div>
+              <div class="stage-controls">
+                <button id="previous-step" type="button" class="control control-secondary" disabled>← Previous stage</button>
+                <span id="progress-label" class="stage-counter">1 OF 3 STAGES</span>
+                <button id="next-step" type="button" class="control control-primary">Next stage →</button>
+              </div>
+            </section>
+
+            <section class="story-section outcome-section" aria-labelledby="outcome-heading">
+              <div class="story-step-heading"><span class="step-number">03</span><div><p class="story-eyebrow">RESULT</p><h4 id="outcome-heading">What happened—and why does it matter?</h4></div></div>
+              <div class="outcome-summary" id="outcome-summary">
+                <span class="outcome-signal" id="outcome-label">DENIED BEFORE READ</span>
+                <p id="outcome-explanation">The request never reaches the file adapter, so the requested .env contents are not returned by this routed operation.</p>
+              </div>
+            </section>
           </div>
-          <div class="case-heading">
-            <p class="case-category" id="case-category">NODE POLICY GUARD</p>
-            <h3 id="case-title">Select a case</h3>
-            <p id="case-subtitle">A guided walkthrough of documented security decisions.</p>
-          </div>
-          <div class="case-metadata">
-            <div><span>TOOL / PROBE</span><strong id="case-tool"></strong></div>
-            <div><span>POLICY / BOUNDARY</span><strong id="case-rule"></strong></div>
-            <div><span>TARGET</span><strong id="case-target"></strong></div>
-          </div>
-          <div class="step-stage" aria-live="polite" aria-atomic="true">
-            <div class="step-eyebrow"><span id="step-phase">REQUEST</span><span id="step-position">01 / 03</span></div>
-            <h4 id="step-title"></h4>
-            <p id="step-detail"></p>
-            <div class="terminal-line"><span class="terminal-prompt" aria-hidden="true">›</span><code id="step-signal"></code></div>
-          </div>
-          <div class="playback">
-            <div class="playback-top"><span>DECISION SEQUENCE</span><span id="progress-label">STEP 1 OF 3</span></div>
-            <div class="progress-track" aria-hidden="true"><div id="progress-fill"></div></div>
-            <div class="playback-actions">
-              <button id="previous-step" type="button" class="button secondary">← Previous</button>
-              <button id="restart-case" type="button" class="button subtle">Restart case</button>
-              <button id="next-step" type="button" class="button primary">Next step →</button>
+
+          <aside class="case-context" aria-label="Technical details for selected case">
+            <h4>Behind the decision</h4>
+            <dl class="facts">
+              <div><dt>Tool / diagnostic</dt><dd><code id="case-tool">file.read</code></dd></div>
+              <div><dt>Target</dt><dd><code id="case-target">.env</code></dd></div>
+              <div><dt>Rule / boundary</dt><dd><code id="case-rule">DENY_SENSITIVE_FILE</code></dd></div>
+              <div><dt>Enforcement layer</dt><dd id="case-environment">Node policy guard</dd></div>
+            </dl>
+            <p class="aside-note">This information describes the selected documented scenario, not a current local session.</p>
+          </aside>
+        </div>
+
+        <section class="case-proof" id="case-proof" aria-labelledby="case-proof-heading">
+          <div class="proof-intro"><span class="step-number">04</span><div><p class="story-eyebrow">VERIFICATION</p><h4 id="case-proof-heading">What supports this result?</h4></div></div>
+          <div class="proof-content">
+            <div>
+              <span class="proof-label">EVIDENCE SCOPE</span>
+              <p id="case-evidence">Documented policy test</p>
+              <a id="case-source" class="proof-link" href="https://github.com/christophervalle85/agent-black-box/blob/main/docs/SECURITY.md" target="_blank" rel="noopener noreferrer">Read supporting documentation <span aria-hidden="true">↗</span></a>
+            </div>
+            <div>
+              <span class="proof-label">WHAT THIS DOES NOT PROVE</span>
+              <p id="case-limitation">The guard applies to routed tool calls; it does not monitor every read made by other processes.</p>
             </div>
           </div>
-          <div class="case-bottom">
-            <span><b>EVIDENCE SCOPE</b><span id="case-evidence"></span></span>
-            <a id="case-source" href="https://github.com/christophervalle85/agent-black-box" target="_blank" rel="noopener noreferrer">Read supporting documentation ↗</a>
-          </div>
-        </article>
-      </div>
-      <div class="timeline-rail"><div class="timeline-rail-top"><h3>Inside the decision</h3><p>Each stage is a reconstructed explanation, not a recorded live event.</p></div><ol id="scenario-timeline"></ol></div>
+        </section>
+        <footer class="case-footer">
+          <p id="action-feedback" aria-live="polite" role="status"></p>
+          <a class="footer-bridge" href="#architecture">Where does this control fit? ↓</a>
+          <button class="footer-action" id="restart-case" type="button">↺ Restart this case</button>
+          <button class="footer-action" id="copy-case-link" type="button">Copy a link to this step ↗</button>
+          <button class="footer-action footer-next" id="next-case" type="button">Next investigation →</button>
+        </footer>
+      </article>
     </section>
 
-    <section class="principles" aria-labelledby="principles-title">
-      <p class="kicker">DESIGN PRINCIPLES</p>
-      <h2 id="principles-title">Security controls worth seeing.</h2>
-      <div class="principle-grid">
-        <div class="principle"><span>01 / POLICY</span><h3>Decide before acting.</h3><p>Tool calls go through a deterministic guard. Unsupported or risky actions fail closed before execution.</p></div>
-        <div class="principle"><span>02 / HUMAN</span><h3>Approve the exact thing.</h3><p>Eligible note writes pause for one-time review of the requested content. Approval does not grant arbitrary access.</p></div>
-        <div class="principle"><span>03 / KERNEL</span><h3>Move the boundary to the OS.</h3><p>The macOS required-mode worker is separately sandboxed and signed. The Node control plane is not sandboxed.</p></div>
+    <section class="chapter page-width" id="architecture" aria-labelledby="architecture-title">
+      <div class="chapter-heading">
+        <p class="chapter-marker">02 <span aria-hidden="true">/</span> UNDERSTAND THE BOUNDARIES</p>
+        <div><h2 id="architecture-title">Not one universal sandbox.</h2><p>A request is checked in the Node control plane. The native macOS worker has a different, narrower operating-system boundary.</p></div>
+      </div>
+      <div class="architecture-frame">
+        <div class="architecture-model">
+          <div class="architecture-model-heading">
+            <span>THE ROUTED TOOL-CALL PATH</span>
+            <span>NODE / APPLICATION ENFORCEMENT</span>
+          </div>
+          <ol class="authority-chain">
+            <li>
+              <span class="chain-index">01</span>
+              <div class="chain-content">
+                <h3>A request reaches the guard</h3>
+                <p>A model or MCP client proposes an operation. That request does not carry execution authority on its own.</p>
+              </div>
+            </li>
+            <li class="chain-decision">
+              <span class="chain-index">02</span>
+              <div class="chain-content">
+                <h3>The policy makes a decision</h3>
+                <p>The routed Node guard checks tool permissions, inputs, and applicable deterministic rules.</p>
+                <div class="decision-routes" aria-label="Possible guarded decisions">
+                  <div><strong>Denied</strong><span>Stop before adapter dispatch</span></div>
+                  <div><strong>Needs review</strong><span>Pause an eligible exact note write</span></div>
+                  <div><strong>Allowed</strong><span>Continue within the permitted scope</span></div>
+                </div>
+              </div>
+            </li>
+            <li>
+              <span class="chain-index">03</span>
+              <div class="chain-content">
+                <h3>Execution and evidence stay bounded</h3>
+                <p>Only a permitted or specifically reviewed request reaches guarded execution. Local audit records support subsequent integrity checks.</p>
+              </div>
+            </li>
+          </ol>
+        </div>
+        <aside class="architecture-scope" aria-labelledby="scope-title">
+          <p class="scope-eyebrow">A SEPARATE ENFORCEMENT LAYER</p>
+          <h3 id="scope-title">The macOS worker has its own boundary.</h3>
+          <p>The signed XPC worker is subject to App Sandbox controls for its narrow supported operations. A separately signed worker-source diagnostic produced the documented host-private file and loopback denials.</p>
+          <p class="scope-warning"><strong>Not a universal sandbox.</strong> The Node control plane remains outside that native App Sandbox. The diagnostic is not a fresh test of the byte-identical installed worker.</p>
+          <a class="scope-link" href="https://github.com/christophervalle85/agent-black-box/blob/main/docs/v0.8-final-native-acceptance.md" target="_blank" rel="noopener noreferrer">Review the native acceptance record <span aria-hidden="true">↗</span></a>
+        </aside>
+      </div>
+      <div class="architecture-support">
+        <div><span>OPERATOR AUTHORITY</span><h3>Human review is specific.</h3><p>Eligible note writes require a one-time decision about the reviewed target and content—not general filesystem access.</p></div>
+        <div><span>EVIDENCE INTEGRITY</span><h3>Audit records are authenticated.</h3><p>HMAC-linked records and checkpoints support local verification, within documented same-user and custody limitations.</p></div>
+      </div>
+    </section>
+
+    <section class="chapter page-width evidence-section" id="evidence" aria-labelledby="evidence-title">
+      <div class="chapter-heading">
+        <p class="chapter-marker">03 <span aria-hidden="true">/</span> INSPECT THE EVIDENCE</p>
+        <div><h2 id="evidence-title">Follow the claim to its source.</h2><p>Each record explains a documented scope. No results below are generated by browsing this page.</p></div>
+      </div>
+      <div class="evidence-list">
+        <a href="https://github.com/christophervalle85/agent-black-box/blob/main/docs/SECURITY.md" target="_blank" rel="noopener noreferrer"><span class="evidence-index">01</span><span><strong>Policy checks</strong><small>Application-level routing, allowlist rules, and limitations</small></span><span class="evidence-kind">CONTROL DOCUMENTATION</span><span aria-hidden="true">↗</span></a>
+        <a href="https://github.com/christophervalle85/agent-black-box/blob/main/docs/MCP_GATEWAY.md" target="_blank" rel="noopener noreferrer"><span class="evidence-index">02</span><span><strong>One-use approval</strong><small>Exact note-creation review and bounded authority</small></span><span class="evidence-kind">LIFECYCLE DOCUMENTATION</span><span aria-hidden="true">↗</span></a>
+        <a href="https://github.com/christophervalle85/agent-black-box/blob/main/docs/v0.8-final-native-acceptance.md" target="_blank" rel="noopener noreferrer"><span class="evidence-index">03</span><span><strong>macOS negative proofs</strong><small>Separate signed worker-source diagnostic and observed denials</small></span><span class="evidence-kind">REAL-MAC ACCEPTANCE</span><span aria-hidden="true">↗</span></a>
+        <a href="https://github.com/christophervalle85/agent-black-box/blob/main/docs/AUDIT_TRUST.md" target="_blank" rel="noopener noreferrer"><span class="evidence-index">04</span><span><strong>Audit trust model</strong><small>HMAC detection, checkpoints, and custody boundaries</small></span><span class="evidence-kind">INTEGRITY DOCUMENTATION</span><span aria-hidden="true">↗</span></a>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer"><span>AGENT BLACK BOX <span class="footer-dot">✳</span> FIELD GUIDE</span><span>v0.9 scaffold · Source-backed, illustrated behavior</span><a href="/">Open operational dashboard ↗</a></footer>
+  <footer class="site-footer"><span>AGENT BLACK BOX / SECURITY ENGINEERING</span><span>Illustrative guide. Actual operator controls remain local.</span><a href="#overview">Back to top ↑</a></footer>
 </body>
 </html>
