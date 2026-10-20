@@ -30,14 +30,14 @@ test('my guided showcase serves static resources without adding tool or approval
       assert.match(await response.text(), new RegExp(snippet, 'i'));
     }
     const html = await (await fetch(base + '/showcase')).text();
-    assert.match(html, /href="\\/showcase"/);
+    assert.match(html, /href="\/showcase"/);
     assert.match(html, /id="scenario-list"/);
     assert.match(html, /id="request-payload"/);
     assert.match(html, /id="case-limitation"/);
     const script = await (await fetch(base + '/showcase.js')).text();
-    assert.doesNotMatch(script, /\\bfetch\\s*\\(|XMLHttpRequest|sendBeacon/);
-    assert.match(script, /history\\.pushState/);
-    assert.match(script, /navigator\\.clipboard/);
+    assert.doesNotMatch(script, /\bfetch\s*\(|XMLHttpRequest|sendBeacon/);
+    assert.match(script, /history\.pushState/);
+    assert.match(script, /navigator\.clipboard/);
     assert.equal((await fetch(base + '/api/health')).status, 200);
     assert.equal((await fetch(base + '/showcase', {method:'POST'})).status, 404);
     assert.equal((await fetch(base + '/docs/SECURITY.md')).status, 404);
