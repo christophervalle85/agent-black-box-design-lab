@@ -18,7 +18,7 @@ test('my showcase fixtures remain bounded, unique, and clearly illustrative', ()
       assert.equal(typeof scenario[key], 'string');
       assert.ok(scenario[key].length > 2, `${scenario.id} needs ${key}`);
     }
-    assert.match(scenario.source, /^https:\/\/github\.com\/christophervalle85\/agent-black-box\/blob\/main\/docs\/[a-zA-Z0-9._-]+\.md$/);
+    assert.match(scenario.source, /^https:\/\/github\.com\/christophervalle85\/agent-black-box-design-lab\/blob\/main\/docs\/[a-zA-Z0-9._-]+\.md$/);
     assert.ok(scenario.steps.length >= 3);
     assert.ok(Object.isFrozen(scenario.steps));
     assert.ok(Object.isFrozen(scenario));

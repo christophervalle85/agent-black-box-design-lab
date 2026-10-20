@@ -17,6 +17,7 @@ const publicFiles = {
   '/': ['index.html', 'text/html; charset=utf-8'],
   '/app.js': ['app.js', 'application/javascript; charset=utf-8'],
   '/styles.css': ['styles.css', 'text/css; charset=utf-8'],
+  '/design-system.css': ['design-system.css', 'text/css; charset=utf-8'],
   // My guided portfolio walkthrough is static and cannot call guarded tools.
   '/showcase': ['showcase.html', 'text/html; charset=utf-8'],
   '/showcase.js': ['showcase.js', 'application/javascript; charset=utf-8'],
