@@ -44,6 +44,14 @@ const outcomes = Object.freeze({
     explanation: 'A deliberately changed fixture fails HMAC-linked audit verification. The documented local guard then refuses protected execution while integrity is compromised.'
   }
 });
+const requestNotes = Object.freeze({
+  'restricted-file': 'Illustrative file-read request: no real credential file is opened by this page.',
+  'shell-command': 'Synthetic command text only. There is no real installation destination or shell process.',
+  'human-approval': 'This fixture identifies the reviewed filename, but does not include the note body. In the real local flow, the operator reviews the exact content before deciding.',
+  'path-traversal': 'This relative path is a synthetic example. No actual workspace traversal is attempted here.',
+  'native-boundary': 'This is a separate signed diagnostic fixture—not an agent-callable tool operation or a new test run.',
+  'audit-tamper': 'This is a deliberately altered test fixture, not a record from a current local session.'
+});
 const stageLabels = Object.freeze({
   'restricted-file': ['Request', 'Policy match', 'Denied'],
   'shell-command': ['Request', 'No shell grant', 'Denied'],
@@ -119,6 +127,7 @@ function render() {
   $('case-subtitle').textContent = current.subtitle;
   $('case-outcome').textContent = current.outcome;
   $('request-payload').textContent = requestText(current);
+  $('request-explainer').textContent = requestNotes[current.id];
   $('case-tool').textContent = current.tool;
   $('case-target').textContent = current.target;
   $('case-rule').textContent = current.rule;
