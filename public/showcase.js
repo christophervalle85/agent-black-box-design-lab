@@ -123,7 +123,7 @@ $('copy-case').addEventListener('click', async () => {
 window.addEventListener('popstate', readLocation);
 readLocation();
 // The guide is presentation-only. No local API is read or invoked here.
-$('demo-mode-description').textContent = 'Documented behavior, reconstructed step by step. No tools run and no approvals are issued.';
+$('demo-mode-description').textContent = 'No tools are run.';
 document.body.dataset.mode = SHOWCASE_MODE.id;
 
 const docs = 'https://github.com/christophervalle85/agent-black-box-design-lab/blob/main/docs/';
@@ -159,18 +159,3 @@ function revealEvidenceHash() {
 }
 window.addEventListener('hashchange', revealEvidenceHash);
 revealEvidenceHash();
-const navigation = [...document.querySelectorAll('.site-nav a')];
-const sections = navigation.map(link => document.querySelector(link.hash));
-let scrollScheduled = false;
-function updateNavigation() {
-  const top = document.querySelector('.site-header').offsetHeight + 130;
-  let selected = sections[0];
-  for (const section of sections) if (section.getBoundingClientRect().top <= top) selected = section;
-  navigation.forEach(link => {
-    if (link.hash === '#' + selected.id) link.setAttribute('aria-current', 'location');
-    else link.removeAttribute('aria-current');
-  });
-  scrollScheduled = false;
-}
-window.addEventListener('scroll', () => { if (!scrollScheduled) { scrollScheduled = true; requestAnimationFrame(updateNavigation); } }, { passive: true });
-updateNavigation();
