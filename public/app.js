@@ -1,6 +1,15 @@
-const state = { activity: [], policies: [], approvals: [], filter: 'all', view: 'overview', selected: null };
+const state = { activity: [], policies: [], approvals: [], filter: 'all', view: 'overview', dataReady: false };
+const busyApprovals = new Set();
+let approvalSignature = '';
+let refreshing = false;
+let refreshingApprovals = false;
+let renderedActivity = '';
+let renderedPolicies = '';
 const $ = id => document.getElementById(id);
-const text = (node, value) => { node.textContent = String(value); };
+const text = (node, value) => {
+  const next = String(value);
+  if (node.textContent !== next) node.textContent = next;
+};
 const ago = timestamp => {
   const seconds = Math.max(0, Math.floor((Date.now() - Date.parse(timestamp)) / 1000));
   if (seconds < 60) return `${seconds}s ago`;
@@ -16,10 +25,10 @@ const make = (tag, className = '', label = '') => {
 };
 const empty = (label = 'No activity to display') => {
   const box = make('div', 'empty-state');
-  box.append(make('div', 'empty-icon', '◇'), make('strong', '', label), make('p', '', 'Run the demo agent to generate real policy decisions and explore its audit trail.'));
+  box.append(make('div', 'empty-icon', '◇'), make('strong', '', label), make('p', '', state.dataReady ? 'Run the scripted demo to record nine guarded requests, then inspect their decisions.' : 'Waiting for verified local audit data. Check the status message above.'));
   return box;
 };
-const statusLabel = event => event.decision === 'review' ? 'Pending review' : event.decision === 'block' ? 'Blocked' : event.outcome === 'error' ? 'Failed' : event.outcome === 'simulated' ? 'Simulated' : 'Allowed';
+const statusLabel = event => event.outcome === 'uncertain' || event.ruleId === 'MCP_OUTCOME_UNKNOWN' ? 'Outcome unknown' : event.decision === 'review' ? 'Pending review' : event.decision === 'block' ? 'Blocked' : event.outcome === 'pending' ? 'In progress' : event.outcome === 'error' ? 'Failed' : event.outcome === 'simulated' ? 'Simulated' : 'Allowed';
 
 async function fetchJson(path, options) {
   const response = await fetch(path, options);
@@ -28,43 +37,69 @@ async function fetchJson(path, options) {
   return data;
 }
 async function refresh() {
+  if (refreshing) return;
+  refreshing = true;
   try {
-    const response=await fetch('/api/audit/incidents');
-    const incident=await response.json();
-    text($('incident-status'),incident.actionable?('CRITICAL: '+incident.incidentCode):'None detected');
-    text($('incident-guidance'),incident.actionable?
-      'Audit evidence needs investigation. Protected tool execution is disabled; preserve records and do not reseal.':
-      (incident.externalCheckpoint==='verified'?'External checkpoint matches the local history.':'Local chain verified. Independent checkpoint comparison is not configured.'));
-    text($('audit-integrity-label'),incident.actionable?
-      ('CRITICAL: '+incident.incidentCode):
-      ('Verified HMAC chain · '+incident.records+' records · external '+incident.externalCheckpoint));
-  }catch{ text($('audit-integrity-label'),'Integrity status unavailable — investigate'); text($('incident-status'),'Unknown'); text($('incident-guidance'),'Incident reporting unavailable.'); }
-  const [ev, stats, pol] = await Promise.all([
-    fetchJson('/api/activity?limit=300'), fetchJson('/api/stats'), fetchJson('/api/policies')
-  ]);
-  state.activity = ev.activity;
-  state.policies = pol.policies;
-  text($('total-value'), stats.total);
-  text($('allowed-value'), stats.allowed);
-  text($('blocked-value'), stats.blocked);
-  text($('risk-value'), stats.highRisk);
-  text($('nav-count'), stats.total);
-  text($('audit-event-count'), `${stats.auditEvents} underlying audit events in current window`);
-  text($('policy-count'), `${pol.policies.length} active`);
-  render();
+    try {
+      const response = await fetch('/api/audit/incidents');
+      const incident = await response.json();
+      if (!response.ok && !incident.incidentCode) throw new Error('Incident status unavailable');
+      text($('incident-status'), incident.actionable ? 'Integrity needs attention' : 'Local chain verified');
+      text($('incident-guidance'), incident.actionable
+        ? `Protected operations are blocked (${incident.incidentCode}). Preserve audit records and investigate; do not reseal.`
+        : incident.externalCheckpoint === 'verified' ? 'The external checkpoint matches this local history.' : 'The local record chain verifies. Independent checkpoint comparison is not configured.');
+      text($('audit-integrity-label'), incident.actionable ? incident.incidentCode : `HMAC-SHA256 · ${incident.records} records`);
+      document.querySelector('.guard-panel').dataset.state = incident.actionable ? 'error' : 'verified';
+    } catch {
+      text($('audit-integrity-label'), 'Verification unavailable');
+      text($('incident-status'), 'Status unknown');
+      text($('incident-guidance'), 'The evidence check could not be completed. Check the local server before trusting displayed activity.');
+      document.querySelector('.guard-panel').dataset.state = 'unknown';
+    }
+    const [ev, stats, pol] = await Promise.all([
+      fetchJson('/api/activity?limit=300'), fetchJson('/api/stats'), fetchJson('/api/policies')
+    ]);
+    state.activity = ev.activity;
+    state.policies = pol.policies;
+    state.dataReady = true;
+    text($('total-value'), stats.total);
+    text($('allowed-value'), stats.allowed);
+    text($('blocked-value'), stats.blocked);
+    text($('risk-value'), stats.highRisk);
+    text($('nav-count'), stats.total);
+    text($('audit-event-count'), `${stats.auditEvents} audit events in current window`);
+    text($('policy-count'), `${pol.policies.length} rules`);
+    $('data-status').dataset.state = 'ready';
+    text($('data-message'), 'Local audit data available');
+    text($('data-updated'), ` · updated ${new Date().toLocaleTimeString()} · latest 1,000 audit events`);
+    render();
+  } catch (error) {
+    state.dataReady = false;
+    state.activity = [];
+    state.policies = [];
+    for (const id of ['total-value', 'allowed-value', 'blocked-value', 'risk-value', 'nav-count', 'policy-count']) text($(id), '—');
+    text($('audit-event-count'), 'Data unavailable');
+    $('data-status').dataset.state = 'error';
+    text($('data-message'), `Local audit data unavailable. ${error.message} Check the server; this view retries automatically.`);
+    text($('data-updated'), '');
+    render();
+  } finally { refreshing = false; }
 }
 function renderRecent() {
   const parent = $('recent-activity');
   parent.replaceChildren();
-  if (!state.activity.length) { parent.append(empty()); return; }
+  if (!state.activity.length) { parent.append(empty(state.dataReady ? 'No requests yet' : 'Activity unavailable')); return; }
   for (const event of state.activity.slice(0, 6)) {
     const item = make('button', 'recent-event');
     item.type = 'button';
+    item.dataset.requestId = event.id;
     const icon = make('div', `event-icon ${event.decision}`, event.decision === 'allow' ? '✓' : event.decision === 'review' ? '!' : '×');
     const main = make('div', 'event-main');
     main.append(make('strong', '', event.tool), make('small', '', `${event.agentId}  ·  ${event.ruleId}`));
     const side = make('div', 'event-side');
-    side.append(make('span', `status ${event.decision}`, statusLabel(event)), make('small', '', ago(event.timestamp)));
+    const age = make('small', '', ago(event.timestamp));
+    age.dataset.timestamp = event.timestamp;
+    side.append(make('span', `status ${event.decision}`, statusLabel(event)), age);
     item.append(icon, main, side);
     item.addEventListener('click', () => showEvent(event));
     parent.append(item);
@@ -78,12 +113,13 @@ function renderTable() {
       ? item.events.some(e => e.decision === 'review')
       : item.decision === state.filter));
   if (!filtered.length) {
-    const cell = make('td'); cell.colSpan = 7; cell.append(empty('No matching events'));
+    const cell = make('td'); cell.colSpan = 7; cell.append(empty(state.dataReady ? 'No matching requests' : 'Activity unavailable'));
     const row = make('tr'); row.append(cell); body.append(row);
   }
   for (const event of filtered) {
     const row = make('tr');
     row.tabIndex = 0;
+    row.dataset.requestId = event.id;
     row.setAttribute('aria-label', `Inspect ${event.tool} ${statusLabel(event)}`);
     const time = make('td', '', new Date(event.startedAt ?? event.timestamp).toLocaleTimeString());
     const toolCell = make('td');
@@ -102,6 +138,7 @@ function renderTable() {
 }
 function renderPolicies() {
   const parent = $('policy-list'); parent.replaceChildren();
+  if (!state.dataReady) { parent.append(empty('Policies unavailable')); return; }
   for (const policy of state.policies) {
     const item = make('div', 'policy-item');
     item.append(make('div', 'policy-item-icon', policy.id.startsWith('DENY') ? '⊘' : policy.id.startsWith('REQUIRE') ? '◷' : '✓'));
@@ -111,7 +148,29 @@ function renderPolicies() {
     parent.append(item);
   }
 }
-function render() { renderRecent(); renderTable(); renderPolicies(); }
+function render() {
+  const activitySignature = JSON.stringify([state.dataReady, state.activity]);
+  if (activitySignature !== renderedActivity) {
+    const focused = document.activeElement;
+    const requestId = focused?.dataset.requestId;
+    const region = focused?.closest('#event-table, #recent-activity')?.id;
+    renderRecent();
+    renderTable();
+    renderedActivity = activitySignature;
+    if (requestId && region) {
+      const replacement = [...$(region).querySelectorAll('[data-request-id]')].find(node => node.dataset.requestId === requestId);
+      if (replacement) replacement.focus({ preventScroll: true });
+      else $('page-title').focus({ preventScroll: true });
+    }
+  } else {
+    $('recent-activity').querySelectorAll('[data-timestamp]').forEach(node => text(node, ago(node.dataset.timestamp)));
+  }
+  const policySignature = JSON.stringify([state.dataReady, state.policies]);
+  if (policySignature !== renderedPolicies) {
+    renderPolicies();
+    renderedPolicies = policySignature;
+  }
+}
 function showEvent(event) {
   const content = $('dialog-content'); content.replaceChildren();
   text($('dialog-title'), event.tool);
@@ -148,7 +207,8 @@ function showEvent(event) {
       const header = make('div', 'audit-timeline-header');
       const title = step.decision === 'review' ? 'Approval requested' :
         step.ruleId === 'APPROVAL_DENIED' ? 'Approval denied' :
-        step.ruleId === 'APPROVAL_GRANTED' ? 'Approval granted and action completed' :
+        step.ruleId === 'APPROVAL_GRANTED' ? (step.outcome === 'success' ? 'Approval granted; write completed' : 'Approval granted; inspect outcome') :
+        step.ruleId === 'MCP_OUTCOME_UNKNOWN' ? 'Execution outcome unknown' :
         step.decision === 'block' ? 'Request blocked' : 'Action allowed';
       header.append(make('strong', '', `${index + 1}. ${title}`), make('time', '', new Date(step.timestamp).toLocaleTimeString()));
       entry.append(header, make('div', 'audit-timeline-detail', `${step.ruleId} · ${step.outcome}`),
@@ -157,16 +217,34 @@ function showEvent(event) {
     }
     body.append(timeline);
   }
-  content.append(body); $('event-dialog').showModal();
+  content.append(body); if (!$('event-dialog').open) $('event-dialog').showModal();
 }
-function navigate(view) {
+const viewLabels = {
+  overview: ['Session overview', 'Actual guarded requests and the evidence they leave behind.', 'Session'],
+  agent: ['Local AI agent', 'Run a task with Ollama and inspect each guarded tool request.', 'AI agent'],
+  approvals: ['Your decision matters.', 'Review the exact request. Approve once or deny.', 'Approvals'],
+  activity: ['Activity log', 'Inspect policy decisions and execution outcomes separately.', 'Activity'],
+  policies: ['Security policies', 'The rules applied to instrumented tool requests.', 'Policies']
+};
+function navigate(view, updateUrl = true) {
+  if (!Object.hasOwn(viewLabels, view)) view = 'overview';
   state.view = view;
-  const labels = { overview: ['Security overview', 'Monitor every agent action. Understand every security decision.', 'Overview'], agent: ['Local AI agent', 'Give a real model a task and observe guarded tool calls in real time.', 'AI agent'], approvals: ['Human approvals', 'Inspect and authorize individual pending tool requests.', 'Approvals'], activity: ['Activity log', 'Explore decisions, risk classifications and execution outcomes.', 'Activity log'], policies: ['Security policies', 'Review the rules protecting instrumented tools.', 'Security policies'] };
-  const [title, subtitle, crumb] = labels[view];
+  const [title, subtitle, crumb] = viewLabels[view];
   text($('page-title'), title); text($('page-subtitle'), subtitle); text($('page-crumb'), crumb);
-  for (const section of ['overview', 'agent', 'approvals', 'activity', 'policies']) $(section + '-view').classList.toggle('hidden', section !== view);
-  for (const button of document.querySelectorAll('.nav-item')) button.classList.toggle('active', button.dataset.view === view);
+  for (const section of Object.keys(viewLabels)) $(section + '-view').classList.toggle('hidden', section !== view);
+  for (const button of document.querySelectorAll('.nav-item')) {
+    button.classList.toggle('active', button.dataset.view === view);
+    if (button.dataset.view === view) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
+  }
+  if (updateUrl) history.pushState(null, '', '#' + view);
+  document.title = `${crumb} · Agent Black Box`;
 }
+window.addEventListener('popstate', () => {
+  const view = location.hash.slice(1);
+  if (!view || Object.hasOwn(viewLabels, view)) navigate(view, false);
+});
+navigate(location.hash.slice(1), false);
 let toastTimeout;
 function toast(message) {
   text($('toast'), message); $('toast').classList.add('visible');
@@ -175,7 +253,7 @@ function toast(message) {
 }
 async function runDemo() {
   const button = $('run-demo'); button.disabled = true;
-  const initial = button.innerHTML;
+  const initial = [...button.childNodes].map(node => node.cloneNode(true));
   button.textContent = 'Running demo…';
   try {
     const data = await fetchJson('/api/demo/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
@@ -183,7 +261,7 @@ async function runDemo() {
     toast(`Run completed: ${data.allowed} allowed · ${data.blocked} blocked · ${data.errors} failed`);
     navigate('activity');
   } catch (error) { toast(`Demo failed: ${error.message}`); }
-  finally { button.disabled = false; button.innerHTML = initial; }
+  finally { button.disabled = false; button.replaceChildren(...initial); }
 }
 async function checkAgentModel() {
   try {
@@ -191,7 +269,7 @@ async function checkAgentModel() {
     text($('model-name'), state.model);
     $('model-led').classList.toggle('ready', state.ready);
     text($('model-status'), state.ready ? 'Connected · model installed and ready' : state.reachable ? 'Ollama connected · run ollama pull ' + state.model : 'Offline · start Ollama on localhost:11434');
-  } catch { text($('model-status'), 'Unable to check Ollama status'); }
+  } catch { $('model-led').classList.remove('ready'); text($('model-status'), 'Unable to check Ollama status'); }
 }
 async function runRealAgent() {
   const prompt = $('agent-prompt').value.trim();
@@ -221,7 +299,7 @@ async function runRealAgent() {
     text($('agent-answer'), `Agent could not run: ${error.message}`);
     toast(error.message);
     checkAgentModel();
-  } finally { button.disabled = false; text(button, '✧ Run with local LLM ↗'); refreshApprovals().catch(() => {}); }
+  } finally { button.disabled = false; text(button, 'Run with local LLM'); refreshApprovals().catch(() => {}); }
 }
 $('run-agent').addEventListener('click', runRealAgent);
 $('check-model').addEventListener('click', checkAgentModel);
@@ -240,18 +318,32 @@ $('event-dialog').addEventListener('click', e => { if (e.target === $('event-dia
 refresh().catch(error => toast(`Could not load audit data: ${error.message}`));
 try {
   const stream = new EventSource('/api/stream');
-  stream.addEventListener('open', () => { text($('connection-label'), 'Live monitoring'); });
+  stream.addEventListener('open', () => { text($('connection-label'), 'Stream connected'); $('connection-dot').classList.add('connected'); });
   stream.addEventListener('audit', () => refresh().catch(() => {}));
-  stream.addEventListener('error', () => { text($('connection-label'), 'Reconnecting'); });
+  stream.addEventListener('error', () => { text($('connection-label'), 'Reconnecting'); $('connection-dot').classList.remove('connected'); });
 } catch { text($('connection-label'), 'Offline'); }
-// Safe fallback when SSE is unavailable.
-setInterval(() => refresh().catch(() => {}), 30000);
+
 
 async function refreshApprovals() {
-  const data = await fetchJson('/api/approvals');
-  state.approvals = data.pending;
-  text($('approval-count'), state.approvals.length);
-  for (const id of ['approvals-list', 'agent-approvals']) renderApprovals($(id));
+  if (refreshingApprovals) return;
+  refreshingApprovals = true;
+  try {
+    const data = await fetchJson('/api/approvals');
+    state.approvals = data.pending;
+    text($('approval-count'), state.approvals.length);
+    const signature = JSON.stringify(state.approvals);
+    if (signature !== approvalSignature) {
+      approvalSignature = signature;
+      for (const id of ['approvals-list', 'agent-approvals']) renderApprovals($(id));
+    }
+  } catch {
+    approvalSignature = '';
+    text($('approval-count'), '—');
+    for (const id of ['approvals-list', 'agent-approvals']) {
+      const message = make('p', 'approval-empty', 'Approval status unavailable. Decisions are disabled until the local server responds.');
+      $(id).replaceChildren(message);
+    }
+  } finally { refreshingApprovals = false; }
 }
 function renderApprovals(parent) {
   parent.replaceChildren();
@@ -270,7 +362,10 @@ function renderApprovals(parent) {
     for (const [decision, label] of [['deny', 'Deny request'], ['approve', 'Approve once']]) {
       const button = make('button', `approval-action ${decision}`, label);
       button.type = 'button';
+      button.disabled = busyApprovals.has(approval.id);
       button.addEventListener('click', async () => {
+        if (busyApprovals.has(approval.id)) return;
+        busyApprovals.add(approval.id);
         buttons.querySelectorAll('button').forEach(b => b.disabled = true);
         try {
           await fetchJson(`/api/approvals/${approval.id}/decision`, {
@@ -278,7 +373,11 @@ function renderApprovals(parent) {
           });
           toast(`Request ${decision === 'approve' ? 'approved' : 'denied'}`);
         } catch (error) { toast(`Approval failed: ${error.message}`); }
-        await refreshApprovals().catch(() => {});
+        finally { busyApprovals.delete(approval.id); approvalSignature = ''; }
+        await refreshApprovals();
+        const activeList = $(state.view === 'agent' ? 'agent-approvals' : 'approvals-list');
+        activeList.tabIndex = -1;
+        activeList.focus({ preventScroll: true });
       });
       buttons.append(button);
     }

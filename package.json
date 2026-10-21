@@ -52,7 +52,8 @@
     "mcp:mac-controller-key": "node examples/mcp-macos-controller-keychain.mjs",
     "mcp:mac-operator-transfer": "node examples/mcp-macos-operator-transfer.mjs",
     "mcp:mac-native-required": "node examples/mcp-macos-native-required.mjs",
-    "mcp:mac-native-required-isolation": "node examples/mcp-macos-xpc-notes-isolation.mjs --required-signed"
+    "mcp:mac-native-required-isolation": "node examples/mcp-macos-xpc-notes-isolation.mjs --required-signed",
+    "test:browser": "node tests/frontend.browser.mjs"
   },
   "license": "MIT"
 }

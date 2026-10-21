@@ -1,4 +1,10 @@
-# Agent Black Box · v0.8 development
+# Agent Black Box · Frontend Design Lab
+
+This repository is a sandbox for frontend experiments based on Agent Black Box. The current design uses an editorial case-file identity across the **read-only guide at `/showcase`** and the **operational local console at `/`**. Run `npm start`, then open [the guide](http://127.0.0.1:4317/showcase) or [the console](http://127.0.0.1:4317/).
+
+See [frontend design and validation notes](docs/v0.9-design-lab.md) for the interaction model, research, and optional browser tests. The inherited v0.8 engineering history below describes the original prototype; its historical branch references and on-device acceptance records are not new results from this frontend sandbox.
+
+## Underlying security prototype
 
 **Local AI agent security observability:** Agent Black Box checks instrumented AI-tool operations against deterministic security policies before execution, records policy decisions in a local audit log, and displays activity in a live dashboard. Earlier releases introduced human approval, a guarded MCP stdio gateway, dual-era MCP support, Linux Bubblewrap isolation, and HMAC-protected audit logging. **v0.7 adds signed independent checkpoint receipts, crash-recovery journaling, and incident-status monitoring.**
 

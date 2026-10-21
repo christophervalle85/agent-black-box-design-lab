@@ -1,0 +1,63 @@
+:root {
+  color-scheme: light;
+  --paper: #f2f0e9;
+  --surface: #faf9f5;
+  --white: #fffefa;
+  --ink: #242722;
+  --muted: #64665e;
+  --line: #d1d1c5;
+  --accent: #ac3c29;
+  --accent-soft: #f3e5dc;
+  --dark: #222720;
+  --on-dark: #f4f1e6;
+  --on-dark-muted: #babfb1;
+  --success: #386347;
+  --success-soft: #e4ecdf;
+  --warning: #80540e;
+  --warning-soft: #f1e8ce;
+  --sans: 'Avenir Next', Avenir, 'Segoe UI', sans-serif;
+  --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  font-family: var(--sans);
+  font-synthesis: none;
+  font-size: 16px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--ink); background: var(--paper); -webkit-font-smoothing: antialiased; }
+button, input, select, textarea { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; }
+a { color: inherit; text-underline-offset: 4px; }
+button { color: inherit; }
+button:disabled { cursor: not-allowed; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 5px; }
+::selection { background: #dcc9b9; color: var(--ink); }
+[hidden], .hidden { display: none !important; }
+p { line-height: 1.65; }
+button, a, input, select, textarea, summary { touch-action: manipulation; }
+code, pre, .mono { font-family: var(--mono); }
+.kicker, .eyebrow { font: 11px/1.5 var(--mono); letter-spacing: .11em; text-transform: uppercase; }
+.kicker { display: flex; align-items: center; gap: 12px; }
+.kicker::before { content: ''; width: 7px; height: 7px; background: var(--accent); }
+.brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; flex-shrink: 0; }
+.brand-symbol { width: 30px; height: 30px; background: var(--ink); position: relative; flex: none; }
+.brand-symbol::after { content: ''; position: absolute; width: 9px; height: 9px; right: -3px; bottom: -3px; background: var(--accent); border: 2px solid var(--paper); }
+.brand-name { font-weight: 800; letter-spacing: -.045em; font-size: 19px; }
+.brand-name small { font-size: 11px; font-weight: 500; letter-spacing: 0; display: block; color: var(--muted); margin-top: 2px; }
+.button, .primary-button { display: inline-flex; justify-content: center; align-items: center; gap: 20px; min-height: 48px; padding: 13px 22px; border: 1px solid var(--ink); border-radius: 2px; background: var(--ink); color: var(--white); text-decoration: none; font-size: 14px; font-weight: 650; line-height: 1.4; transition: background .18s, transform .18s; }
+.button:hover, .primary-button:hover { background: #41483c; }
+.button.secondary { background: transparent; color: var(--ink); border-color: var(--line); }
+.button.secondary:hover { background: #e4e3d9; }
+.button.text { border-color: transparent; background: transparent; color: var(--muted); padding-inline: 10px; }
+.button.text:hover { color: var(--ink); text-decoration: underline; }
+.button:disabled, .primary-button:disabled { color: var(--muted); background: #e4e3db; border-color: var(--line); }
+.text-link { display: inline-flex; align-items: center; gap: 14px; min-height: 44px; font-size: 14px; font-weight: 650; }
+.skip { position: fixed; top: 12px; left: 16px; z-index: 100; padding: 16px; transform: translateY(-160%); background: var(--ink); color: white; }
+.skip:focus { transform: none; }
+.status-tag, .status, .tiny-badge { display: inline-flex; align-items: center; gap: 7px; font: 11px/1.4 var(--mono); padding: 6px 9px; background: #e6e5dc; color: #4c5247; text-transform: uppercase; }
+.status.block { color: #98321f; background: var(--accent-soft); }
+.status.allow { color: var(--success); background: var(--success-soft); }
+.status.review { color: var(--warning); background: var(--warning-soft); }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 14px); opacity: 0; pointer-events: none; z-index: 90; width: max-content; max-width: calc(100% - 32px); padding: 15px 22px; color: var(--white); background: var(--ink); border: 1px solid #656c5d; font-size: 14px; transition: opacity .18s, transform .18s; }
+.toast.visible { transform: translate(-50%, 0); opacity: 1; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }

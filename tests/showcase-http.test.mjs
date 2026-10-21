@@ -18,7 +18,8 @@ test('my guided showcase serves static resources without adding tool or approval
     for (const [route, type, snippet] of [
       ['/showcase', 'text/html', 'Illustrative walkthrough'],
       ['/showcase.js', 'application/javascript', 'showcase-scenarios.mjs'],
-      ['/showcase.css', 'text/css', 'tour-grid'],
+      ['/showcase.css', 'text/css', 'design-system.css'],
+      ['/design-system.css', 'text/css', 'prefers-reduced-motion'],
       ['/showcase-scenarios.mjs', 'application/javascript', 'SHOWCASE_MODE']
     ]) {
       const response = await fetch(base + route);

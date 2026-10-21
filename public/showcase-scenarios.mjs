@@ -3,7 +3,7 @@
  * NOT live requests, freshly collected macOS evidence, or audit log records.
  * Keep this module dependency-free so the browser and Node tests share it.
  */
-const doc = name => 'https://github.com/christophervalle85/agent-black-box/blob/main/docs/' + name;
+const doc = name => 'https://github.com/christophervalle85/agent-black-box-design-lab/blob/main/docs/' + name;
 
 export const SHOWCASE_MODE = Object.freeze({
   id: 'illustrative',
